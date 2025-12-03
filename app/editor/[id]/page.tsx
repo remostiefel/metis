@@ -20,6 +20,7 @@ export default function EditorPage({ params }: EditorPageProps) {
     const [saving, setSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [showPomodoro, setShowPomodoro] = useState(false);
+    const [focusMode, setFocusMode] = useState(false);
 
     // Frontmatter state
     const [status, setStatus] = useState<'entwurf' | 'überarbeitung' | 'final'>('entwurf');
@@ -39,11 +40,21 @@ export default function EditorPage({ params }: EditorPageProps) {
                 e.preventDefault();
                 setShowPomodoro(prev => !prev);
             }
+            // Cmd+Shift+F to toggle focus mode
+            if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'f') {
+                e.preventDefault();
+                setFocusMode(prev => !prev);
+                if (!focusMode) {
+                    showToast('Fokus-Modus aktiviert', 'info');
+                } else {
+                    showToast('Fokus-Modus deaktiviert', 'info');
+                }
+            }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [content, status, importance, urgency, id]); // Dependencies for save function
+    }, [content, status, importance, urgency, id, focusMode]); // Dependencies for save function
 
     // Auto-save logic - now includes frontmatter
     useEffect(() => {
@@ -119,9 +130,12 @@ export default function EditorPage({ params }: EditorPageProps) {
     }
 
     return (
-        <div className="min-h-screen bg-background font-sans">
-            {/* Header */}
-            <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10 transition-all">
+        <div className="min-h-screen bg-background font-sans transition-colors duration-500">
+            {/* Header - Hidden in Focus Mode */}
+            <header className={`
+                bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10 transition-all duration-500
+                ${focusMode ? '-translate-y-full opacity-0 absolute w-full' : 'translate-y-0 opacity-100'}
+            `}>
                 <div className="max-w-5xl mx-auto px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -145,13 +159,20 @@ export default function EditorPage({ params }: EditorPageProps) {
                         </div>
                         <div className="flex items-center gap-3">
                             <button
+                                onClick={() => setFocusMode(!focusMode)}
+                                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-full transition-all"
+                                title="Fokus-Modus (Cmd+Shift+F)"
+                            >
+                                👁️ Fokus
+                            </button>
+                            <button
                                 onClick={() => setShowPomodoro(!showPomodoro)}
                                 className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${showPomodoro
                                     ? 'bg-secondary/10 text-secondary-foreground'
                                     : 'text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
-                                {showPomodoro ? 'Timer aktiv' : '⏱️ Fokus'}
+                                {showPomodoro ? 'Timer aktiv' : '⏱️ Timer'}
                             </button>
                             <button
                                 onClick={() => handleSave(false)}
@@ -166,11 +187,26 @@ export default function EditorPage({ params }: EditorPageProps) {
                 </div>
             </header>
 
-            <div className="max-w-5xl mx-auto px-6 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Floating Exit Focus Button */}
+            <button
+                onClick={() => setFocusMode(false)}
+                className={`
+                    fixed top-4 right-4 z-50 p-2 bg-white/10 hover:bg-white/20 text-gray-400 hover:text-gray-600 rounded-full transition-all duration-300 backdrop-blur-sm
+                    ${focusMode ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}
+                `}
+                title="Fokus-Modus beenden (Esc oder Cmd+Shift+F)"
+            >
+                <ArrowLeft size={20} />
+            </button>
+
+            <div className={`max-w-5xl mx-auto px-6 py-8 transition-all duration-500 ${focusMode ? 'max-w-3xl' : ''}`}>
+                <div className={`grid grid-cols-1 gap-8 transition-all duration-500 ${focusMode ? 'lg:grid-cols-1' : 'lg:grid-cols-12'}`}>
                     {/* Editor */}
-                    <div className="lg:col-span-8">
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 min-h-[calc(100vh-12rem)]">
+                    <div className={`transition-all duration-500 ${focusMode ? 'lg:col-span-1' : 'lg:col-span-8'}`}>
+                        <div className={`
+                            bg-white rounded-2xl shadow-sm border border-gray-100 p-8 min-h-[calc(100vh-12rem)] transition-all duration-500
+                            ${focusMode ? 'shadow-none border-none' : ''}
+                        `}>
                             <textarea
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
@@ -179,13 +215,16 @@ export default function EditorPage({ params }: EditorPageProps) {
                                 spellCheck={false}
                             />
                         </div>
-                        <div className="mt-4 flex justify-end text-xs text-gray-400 font-medium px-4">
+                        <div className={`mt-4 flex justify-end text-xs text-gray-400 font-medium px-4 transition-opacity duration-300 ${focusMode ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
                             {content.trim().split(/\s+/).filter(w => w.length > 0).length} Wörter
                         </div>
                     </div>
 
-                    {/* Sidebar */}
-                    <div className="lg:col-span-4 space-y-6">
+                    {/* Sidebar - Hidden in Focus Mode */}
+                    <div className={`
+                        lg:col-span-4 space-y-6 transition-all duration-500
+                        ${focusMode ? 'opacity-0 translate-x-20 hidden' : 'opacity-100 translate-x-0 block'}
+                    `}>
                         {showPomodoro && (
                             <div className="animate-in slide-in-from-right-4 duration-300">
                                 <PomodoroTimer />
