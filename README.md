@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# METIS - Dein persönliches Schreib-Studio ✍️
 
-## Getting Started
+METIS ist eine moderne, ablenkungsfreie Schreib-App, die speziell für Autoren entwickelt wurde, die Struktur und Fokus brauchen. Sie kombiniert einen Markdown-Editor mit bewährten Produktivitätsmethoden wie der Eisenhower-Matrix und der Pomodoro-Technik.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Ablenkungsfreier Editor:** Minimalistisches Design mit Fokus auf deinen Text.
+- **Markdown-Support:** Schreibe in einfachem Markdown, formatiere automatisch.
+- **Auto-Save:** Deine Arbeit wird alle 30 Sekunden automatisch gespeichert.
+- **Cloud Backup:** Sichere deinen Fortschritt mit einem Klick auf GitHub.
+- **Pomodoro Timer:** Integrierter Fokus-Timer für produktive Schreib-Sessions.
+- **Eisenhower-Matrix:** Organisiere deine Kapitel nach Wichtigkeit und Dringlichkeit.
+- **Personalisierung:** Ein auf dich zugeschnittenes Dashboard.
+- **Pastell-Theme:** Augenfreundliches Design für lange Sessions.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Installation & Start
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Voraussetzung: Node.js v20 oder höher.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Repository klonen:**
+   ```bash
+   git clone https://github.com/remostiefel/metis.git
+   cd metis-app
+   ```
 
-## Learn More
+2. **Abhängigkeiten installieren:**
+   ```bash
+   npm install
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. **Entwicklungsserver starten:**
+   ```bash
+   npm run dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. **App öffnen:**
+   Besuche [http://localhost:3000](http://localhost:3000) in deinem Browser.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## ⌨️ Shortcuts
 
-## Deploy on Vercel
+| Shortcut | Funktion |
+|----------|----------|
+| `Cmd + S` | Speichern (manuell) |
+| `Cmd + K` | Fokus-Timer ein-/ausblenden |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📂 Projektstruktur
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `content/`: Hier liegen deine Texte als Markdown-Dateien.
+- `app/`: Der Next.js App Router Code.
+- `components/`: Wiederverwendbare UI-Komponenten.
+- `lib/`: Hilfsfunktionen für Markdown und Logik.
+
+## 🤝 Contributing
+
+Dieses Projekt ist personalisiert für Remo Stiefel, aber der Code ist Open Source. Fühle dich frei, ihn zu forken und anzupassen!
+
+---
+
+Entwickelt mit ❤️ und Next.js.

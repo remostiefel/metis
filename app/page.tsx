@@ -30,17 +30,15 @@ export default function Home() {
               >
                 Alle Module
               </Link>
-              Alle Module
-            </Link>
-            <Link
-              href="/editor/template"
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
-            >
-              + Neues Modul
-            </Link>
-          </nav>
+              <Link
+                href="/editor/template"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-all text-sm font-bold shadow-sm hover:shadow-md"
+              >
+                + Neues Modul
+              </Link>
+            </nav>
+          </div>
         </div>
-    </div>
       </header >
 
       <main className="max-w-7xl mx-auto px-4 py-8">

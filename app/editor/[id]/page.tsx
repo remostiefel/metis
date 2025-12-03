@@ -9,7 +9,10 @@ interface EditorPageProps {
     params: Promise<{ id: string }>;
 }
 
+import { useToast } from '@/components/ui/Toast';
+
 export default function EditorPage({ params }: EditorPageProps) {
+    const { showToast } = useToast();
     const [id, setId] = useState<string>('');
     const [content, setContent] = useState('');
     const [title, setTitle] = useState('');
@@ -22,6 +25,25 @@ export default function EditorPage({ params }: EditorPageProps) {
     const [status, setStatus] = useState<'entwurf' | 'überarbeitung' | 'final'>('entwurf');
     const [importance, setImportance] = useState<'low' | 'medium' | 'high'>('medium');
     const [urgency, setUrgency] = useState<'low' | 'medium' | 'high'>('low');
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Cmd+S or Ctrl+S to save
+            if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                e.preventDefault();
+                handleSave(false);
+            }
+            // Cmd+K or Ctrl+K to toggle timer
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setShowPomodoro(prev => !prev);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [content, status, importance, urgency, id]); // Dependencies for save function
 
     // Auto-save logic - now includes frontmatter
     useEffect(() => {
@@ -79,10 +101,10 @@ export default function EditorPage({ params }: EditorPageProps) {
             }
 
             setLastSaved(new Date());
-            if (!isAutoSave) console.log('Module saved successfully');
+            if (!isAutoSave) showToast('Modul erfolgreich gespeichert!', 'success');
         } catch (error) {
             console.error('Error saving module:', error);
-            if (!isAutoSave) alert('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
+            if (!isAutoSave) showToast('Fehler beim Speichern.', 'error');
         } finally {
             if (!isAutoSave) setSaving(false);
         }
@@ -204,8 +226,8 @@ export default function EditorPage({ params }: EditorPageProps) {
                                                 key={value}
                                                 onClick={() => setImportance(value as 'low' | 'medium' | 'high')}
                                                 className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-colors ${importance === value
-                                                        ? 'bg-primary/10 border-primary/30 text-primary-foreground'
-                                                        : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200 text-gray-600'
+                                                    ? 'bg-primary/10 border-primary/30 text-primary-foreground'
+                                                    : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200 text-gray-600'
                                                     }`}
                                             >
                                                 {label}
@@ -225,8 +247,8 @@ export default function EditorPage({ params }: EditorPageProps) {
                                                 key={value}
                                                 onClick={() => setUrgency(value as 'low' | 'medium' | 'high')}
                                                 className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-colors ${urgency === value
-                                                        ? 'bg-secondary/10 border-secondary/30 text-secondary-foreground'
-                                                        : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200 text-gray-600'
+                                                    ? 'bg-secondary/10 border-secondary/30 text-secondary-foreground'
+                                                    : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200 text-gray-600'
                                                     }`}
                                             >
                                                 {label}
