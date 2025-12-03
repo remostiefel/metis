@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PomodoroTimer } from '@/components/PomodoroTimer';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft, Download, Copy } from 'lucide-react';
 
 interface EditorPageProps {
     params: Promise<{ id: string }>;
@@ -118,6 +118,27 @@ export default function EditorPage({ params }: EditorPageProps) {
             if (!isAutoSave) showToast('Fehler beim Speichern.', 'error');
         } finally {
             if (!isAutoSave) setSaving(false);
+        }
+    };
+
+    const handleExportMarkdown = () => {
+        const element = document.createElement("a");
+        const file = new Blob([content], { type: 'text/markdown' });
+        element.href = URL.createObjectURL(file);
+        element.download = `${id.replace(/\//g, '-')}.md`;
+        document.body.appendChild(element); // Required for this to work in FireFox
+        element.click();
+        document.body.removeChild(element);
+        showToast('Markdown-Datei heruntergeladen', 'success');
+    };
+
+    const handleCopyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(content);
+            showToast('Text in die Zwischenablage kopiert', 'success');
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+            showToast('Fehler beim Kopieren', 'error');
         }
     };
 
@@ -286,8 +307,8 @@ export default function EditorPage({ params }: EditorPageProps) {
                                                 key={value}
                                                 onClick={() => setUrgency(value as 'low' | 'medium' | 'high')}
                                                 className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-colors ${urgency === value
-                                                    ? 'bg-secondary/10 border-secondary/30 text-secondary-foreground'
-                                                    : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200 text-gray-600'
+                                                        ? 'bg-secondary/10 border-secondary/30 text-secondary-foreground'
+                                                        : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200 text-gray-600'
                                                     }`}
                                             >
                                                 {label}
@@ -295,6 +316,29 @@ export default function EditorPage({ params }: EditorPageProps) {
                                         ))}
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Export Actions */}
+                        <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
+                                Export
+                            </h3>
+                            <div className="space-y-3">
+                                <button
+                                    onClick={handleCopyToClipboard}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl transition-colors text-sm font-medium border border-gray-100"
+                                >
+                                    <Copy size={16} />
+                                    Text kopieren
+                                </button>
+                                <button
+                                    onClick={handleExportMarkdown}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl transition-colors text-sm font-medium border border-gray-100"
+                                >
+                                    <Download size={16} />
+                                    Als Markdown (.md) laden
+                                </button>
                             </div>
                         </div>
                     </div>
