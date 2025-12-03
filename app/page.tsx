@@ -9,16 +9,16 @@ export default function Home() {
   const stats = getStats(modules);
 
   return (
-    <div className="min-h-screen bg-paper">
+    <div className="min-h-screen bg-background font-sans">
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                METIS
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+                Willkommen zurück, Remo! 👋
               </h1>
-              <p className="text-sm text-neutral mt-1">
-                Selbstmanagement-Schreibwerkstatt
+              <p className="text-sm text-gray-500 mt-1 font-medium">
+                Dein persönliches METIS Schreib-Studio
               </p>
             </div>
             <nav className="flex gap-4">
@@ -41,50 +41,50 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Stats Overview */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-            <div className="text-sm text-gray-600 font-medium mb-1">Gesamt Module</div>
-            <div className="text-3xl font-bold text-gray-900">{stats.totalModules}</div>
+        <div className="grid grid-cols-3 gap-6 mb-10">
+          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="text-sm text-gray-500 font-medium mb-1 uppercase tracking-wider">Gesamt Module</div>
+            <div className="text-4xl font-extrabold text-gray-800">{stats.totalModules}</div>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-            <div className="text-sm text-gray-600 font-medium mb-1">Fertiggestellt</div>
-            <div className="text-3xl font-bold text-gray-900">{stats.completedModules}</div>
+          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="text-sm text-gray-500 font-medium mb-1 uppercase tracking-wider">Fertiggestellt</div>
+            <div className="text-4xl font-extrabold text-success-foreground">{stats.completedModules}</div>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-            <div className="text-sm text-gray-600 font-medium mb-1">Wörter geschrieben</div>
-            <div className="text-3xl font-bold text-gray-900">
+          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="text-sm text-gray-500 font-medium mb-1 uppercase tracking-wider">Wörter geschrieben</div>
+            <div className="text-4xl font-extrabold text-primary-foreground">
               {stats.totalWords.toLocaleString('de-DE')}
             </div>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 mb-10">
           <ProgressBar modules={modules} />
         </div>
 
         {/* Eisenhower Matrix */}
-        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
+        <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Eisenhower-Matrix
           </h2>
-          <p className="text-sm text-neutral mb-6">
-            Priorisieren Sie Ihre Module nach Wichtigkeit und Dringlichkeit
+          <p className="text-gray-500 mb-8">
+            Priorisiere deine Module nach Wichtigkeit und Dringlichkeit
           </p>
           <EisenhowerMatrix modules={modules} />
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-8 flex gap-4 justify-center">
+        <div className="mt-12 flex gap-6 justify-center">
           <Link
             href="/modules"
-            className="px-6 py-3 bg-white border-2 border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors font-medium"
+            className="px-8 py-4 bg-white border-2 border-primary text-primary-foreground rounded-full hover:bg-primary/10 transition-all font-bold shadow-sm hover:shadow-md"
           >
             📚 Alle Module anzeigen
           </Link>
           <Link
             href="/editor/template"
-            className="px-6 py-3 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors font-medium"
+            className="px-8 py-4 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/90 transition-all font-bold shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
             ✍️ Schreib-Session starten
           </Link>
