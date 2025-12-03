@@ -125,7 +125,14 @@ export default function EditorPage({ params }: EditorPageProps) {
         const element = document.createElement("a");
         const file = new Blob([content], { type: 'text/markdown' });
         element.href = URL.createObjectURL(file);
-        element.download = `${id.replace(/\//g, '-')}.md`;
+
+        // Create unique filename with timestamp: module-id_YYYY-MM-DD_HH-MM-SS.md
+        const now = new Date();
+        const dateStr = now.toISOString().split('T')[0];
+        const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+
+        element.download = `${id.replace(/\//g, '-')}_${dateStr}_${timeStr}.md`;
+
         document.body.appendChild(element); // Required for this to work in FireFox
         element.click();
         document.body.removeChild(element);
@@ -307,8 +314,8 @@ export default function EditorPage({ params }: EditorPageProps) {
                                                 key={value}
                                                 onClick={() => setUrgency(value as 'low' | 'medium' | 'high')}
                                                 className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-colors ${urgency === value
-                                                        ? 'bg-secondary/10 border-secondary/30 text-secondary-foreground'
-                                                        : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200 text-gray-600'
+                                                    ? 'bg-secondary/10 border-secondary/30 text-secondary-foreground'
+                                                    : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200 text-gray-600'
                                                     }`}
                                             >
                                                 {label}
