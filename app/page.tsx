@@ -3,6 +3,7 @@ import { getAllModules } from '@/lib/markdown';
 import { EisenhowerMatrix } from '@/components/EisenhowerMatrix';
 import { ProgressBar } from '@/components/ProgressBar';
 import { getStats } from '@/lib/modules';
+import { CloudBackupButton } from '@/components/CloudBackupButton';
 
 export default function Home() {
   const modules = getAllModules();
@@ -10,7 +11,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background font-sans">
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
@@ -22,22 +23,25 @@ export default function Home() {
               </p>
             </div>
             <nav className="flex gap-4">
+              <CloudBackupButton />
               <Link
                 href="/modules"
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary transition-colors"
               >
                 Alle Module
               </Link>
-              <Link
-                href="/editor/template"
-                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
-              >
-                + Neues Modul
-              </Link>
-            </nav>
-          </div>
+              Alle Module
+            </Link>
+            <Link
+              href="/editor/template"
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+            >
+              + Neues Modul
+            </Link>
+          </nav>
         </div>
-      </header>
+    </div>
+      </header >
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Stats Overview */}
@@ -97,6 +101,6 @@ export default function Home() {
           <p className="mt-1">Selbstmanagement für Lehrpersonen</p>
         </div>
       </footer>
-    </div>
+    </div >
   );
 }

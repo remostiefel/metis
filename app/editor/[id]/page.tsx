@@ -18,7 +18,12 @@ export default function EditorPage({ params }: EditorPageProps) {
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [showPomodoro, setShowPomodoro] = useState(false);
 
-    // Auto-save logic
+    // Frontmatter state
+    const [status, setStatus] = useState<'entwurf' | 'überarbeitung' | 'final'>('entwurf');
+    const [importance, setImportance] = useState<'low' | 'medium' | 'high'>('medium');
+    const [urgency, setUrgency] = useState<'low' | 'medium' | 'high'>('low');
+
+    // Auto-save logic - now includes frontmatter
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             if (content && id && !loading) {
@@ -27,7 +32,7 @@ export default function EditorPage({ params }: EditorPageProps) {
         }, 30000); // Auto-save every 30 seconds if changes made
 
         return () => clearTimeout(timeoutId);
-    }, [content, id, loading]);
+    }, [content, status, importance, urgency, id, loading]);
 
     useEffect(() => {
         params.then((resolvedParams) => {
@@ -38,6 +43,9 @@ export default function EditorPage({ params }: EditorPageProps) {
                 .then(data => {
                     setContent(data.content || '');
                     setTitle(data.title || 'Neues Modul');
+                    setStatus(data.status || 'entwurf');
+                    setImportance(data.importance || 'medium');
+                    setUrgency(data.urgency || 'low');
                     setLoading(false);
                 })
                 .catch(() => {
@@ -59,7 +67,9 @@ export default function EditorPage({ params }: EditorPageProps) {
                     frontmatter: {
                         id,
                         title,
-                        // Add other frontmatter fields as needed
+                        status,
+                        importance,
+                        urgency,
                     },
                 }),
             });
@@ -115,8 +125,8 @@ export default function EditorPage({ params }: EditorPageProps) {
                             <button
                                 onClick={() => setShowPomodoro(!showPomodoro)}
                                 className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${showPomodoro
-                                        ? 'bg-secondary/10 text-secondary-foreground'
-                                        : 'text-gray-600 hover:bg-gray-50'
+                                    ? 'bg-secondary/10 text-secondary-foreground'
+                                    : 'text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
                                 {showPomodoro ? 'Timer aktiv' : '⏱️ Fokus'}
@@ -168,10 +178,14 @@ export default function EditorPage({ params }: EditorPageProps) {
                                 <div>
                                     <label className="block text-xs font-medium text-gray-500 mb-1.5">Status</label>
                                     <div className="relative">
-                                        <select className="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-primary/20 cursor-pointer appearance-none">
-                                            <option>Entwurf</option>
-                                            <option>Überarbeitung</option>
-                                            <option>Final</option>
+                                        <select
+                                            value={status}
+                                            onChange={(e) => setStatus(e.target.value as 'entwurf' | 'überarbeitung' | 'final')}
+                                            className="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-primary/20 cursor-pointer appearance-none"
+                                        >
+                                            <option value="entwurf">Entwurf</option>
+                                            <option value="überarbeitung">Überarbeitung</option>
+                                            <option value="final">Final</option>
                                         </select>
                                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                                             ▼
@@ -181,12 +195,41 @@ export default function EditorPage({ params }: EditorPageProps) {
                                 <div>
                                     <label className="block text-xs font-medium text-gray-500 mb-1.5">Wichtigkeit</label>
                                     <div className="flex gap-2">
-                                        {['Niedrig', 'Mittel', 'Hoch'].map((level) => (
+                                        {[
+                                            { label: 'Niedrig', value: 'low' },
+                                            { label: 'Mittel', value: 'medium' },
+                                            { label: 'Hoch', value: 'high' }
+                                        ].map(({ label, value }) => (
                                             <button
-                                                key={level}
-                                                className="flex-1 py-2 text-xs font-medium rounded-lg border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-colors text-gray-600"
+                                                key={value}
+                                                onClick={() => setImportance(value as 'low' | 'medium' | 'high')}
+                                                className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-colors ${importance === value
+                                                        ? 'bg-primary/10 border-primary/30 text-primary-foreground'
+                                                        : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200 text-gray-600'
+                                                    }`}
                                             >
-                                                {level}
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Dringlichkeit</label>
+                                    <div className="flex gap-2">
+                                        {[
+                                            { label: 'Niedrig', value: 'low' },
+                                            { label: 'Mittel', value: 'medium' },
+                                            { label: 'Hoch', value: 'high' }
+                                        ].map(({ label, value }) => (
+                                            <button
+                                                key={value}
+                                                onClick={() => setUrgency(value as 'low' | 'medium' | 'high')}
+                                                className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-colors ${urgency === value
+                                                        ? 'bg-secondary/10 border-secondary/30 text-secondary-foreground'
+                                                        : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200 text-gray-600'
+                                                    }`}
+                                            >
+                                                {label}
                                             </button>
                                         ))}
                                     </div>
