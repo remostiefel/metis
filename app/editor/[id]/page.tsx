@@ -11,6 +11,12 @@ interface EditorPageProps {
 
 import { useToast } from '@/components/ui/Toast';
 import { exportToPDF } from '@/lib/pdfExport';
+import { SourceLibrary } from '@/components/SourceLibrary';
+import { SourceExtractor } from '@/components/SourceExtractor';
+import { Source } from '@/types/source';
+import { PerplexitySearch } from '@/components/PerplexitySearch';
+import { PersonaTester } from '@/components/PersonaTester';
+import { DialecticEngine } from '@/components/DialecticEngine';
 
 export default function EditorPage({ params }: EditorPageProps) {
     const { showToast } = useToast();
@@ -46,6 +52,9 @@ export default function EditorPage({ params }: EditorPageProps) {
     const [isSearchingQuotes, setIsSearchingQuotes] = useState(false);
     const [quoteVerification, setQuoteVerification] = useState<{ isCorrect: boolean; correction: string; author: string; origin: string } | null>(null);
     const [isVerifyingQuote, setIsVerifyingQuote] = useState(false);
+
+    // Research/Sources state
+    const [sources, setSources] = useState<Source[]>([]);
 
     // Frontmatter state
     const [status, setStatus] = useState<'entwurf' | 'überarbeitung' | 'final'>('entwurf');
@@ -110,6 +119,14 @@ export default function EditorPage({ params }: EditorPageProps) {
                     setLoading(false);
                 });
         });
+
+        // Load sources
+        fetch('/api/research/sources')
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) setSources(data);
+            })
+            .catch(console.error);
     }, [params]);
 
     const handleSave = async (isAutoSave = false) => {
@@ -364,6 +381,26 @@ export default function EditorPage({ params }: EditorPageProps) {
         }
     };
 
+    const handleDeleteSource = async (sourceId: string) => {
+        try {
+            await fetch('/api/research/sources', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: sourceId }),
+            });
+            setSources(prev => prev.filter(s => s.id !== sourceId));
+            showToast('Quelle gelöscht', 'success');
+        } catch (error) {
+            console.error('Error deleting source:', error);
+            showToast('Fehler beim Löschen', 'error');
+        }
+    };
+
+    const handleInsertQuoteFromSource = (quote: string, sourceTitle: string) => {
+        setContent(prev => prev + `\n\n> "${quote}"\n> — *${sourceTitle}*`);
+        showToast('Zitat eingefügt', 'success');
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
@@ -537,6 +574,57 @@ export default function EditorPage({ params }: EditorPageProps) {
                                             </button>
                                         ))}
                                     </div>
+                                </div>
+
+                                {/* Research / Sources */}
+                                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl shadow-sm p-6 border border-emerald-100">
+                                    <h3 className="text-sm font-bold text-emerald-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        📚 Quellen-Bibliothek
+                                    </h3>
+                                    <SourceExtractor
+                                        onSourceAdded={(source) => setSources(prev => [...prev, source])}
+                                        showToast={showToast}
+                                    />
+                                    <div className="mt-4">
+                                        <SourceLibrary
+                                            sources={sources}
+                                            onDelete={handleDeleteSource}
+                                            onInsertQuote={handleInsertQuoteFromSource}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Perplexity Academic Research */}
+                                <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-2xl shadow-sm p-6 border border-purple-100">
+                                    <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        🔬 Wissenschaftliche Recherche
+                                    </h3>
+                                    <PerplexitySearch
+                                        onInsertContent={(content) => setContent(prev => prev + content)}
+                                        showToast={showToast}
+                                    />
+                                </div>
+
+                                {/* Persona Testing */}
+                                <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl shadow-sm p-6 border border-indigo-100">
+                                    <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        🎭 Testleser (Personas)
+                                    </h3>
+                                    <PersonaTester
+                                        content={content}
+                                        showToast={showToast}
+                                    />
+                                </div>
+
+                                {/* Dialectic Engine */}
+                                <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl shadow-sm p-6 border border-teal-100">
+                                    <h3 className="text-sm font-bold text-teal-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        ⚖️ Dialektik-Motor
+                                    </h3>
+                                    <DialecticEngine
+                                        initialThesis=""
+                                        showToast={showToast}
+                                    />
                                 </div>
                             </div>
                         </div>

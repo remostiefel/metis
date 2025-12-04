@@ -19,7 +19,7 @@ export function KnowledgeGraph({ modules }: KnowledgeGraphProps) {
     const router = useRouter();
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-    const [graphData, setGraphData] = useState({ nodes: [], links: [] });
+    const [graphData, setGraphData] = useState<{ nodes: any[]; links: any[] }>({ nodes: [], links: [] });
 
     useEffect(() => {
         if (containerRef.current) {

@@ -32,9 +32,14 @@ export function getStats(modules: Module[]) {
         return acc + module.content.trim().split(/\s+/).length;
     }, 0);
 
+    const completedModules = modules.filter(m => m.status === 'final').length;
+    const totalModules = modules.length;
+    const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
+
     return {
         totalWords,
-        totalModules: modules.length,
-        completedModules: modules.filter(m => m.status === 'final').length,
+        totalModules,
+        completedModules,
+        progress,
     };
 }

@@ -5,6 +5,7 @@ import { KnowledgeGraph } from '@/components/KnowledgeGraph';
 import { ProgressBar } from '@/components/ProgressBar';
 import { getStats } from '@/lib/modules';
 import { CloudBackupButton } from '@/components/CloudBackupButton';
+import { BookOpen, FileText, Clock, TrendingUp } from 'lucide-react';
 
 export default function Home() {
   const modules = getAllModules();
