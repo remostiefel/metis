@@ -30,9 +30,9 @@ export async function POST(req: Request) {
           Return a JSON object with a 'references' array. Each item should have:
           - 'targetId': the ID of the referenced module
           - 'targetTitle': the title of the referenced module
-          - 'reason': a brief explanation of why this connection is relevant (e.g., "Expands on the concept of...")
+          - 'reason': a brief explanation of why this connection is relevant (e.g., "Ergänzt das Konzept von...").
           
-          Only suggest strong, relevant connections. IMPORTANT: Output must be in German language.`
+          Analyze the semantic relationship based on German language nuances. Only suggest strong, relevant connections.`
                 },
                 {
                     role: "user",

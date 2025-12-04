@@ -13,7 +13,7 @@ export async function POST(req: Request) {
             messages: [
                 {
                     role: "system",
-                    content: "You are a helpful assistant for an author. Analyze the provided text and suggest 3-5 relevant tags or keywords that categorize the content. Return only the tags as a JSON array of strings, e.g., [\"productivity\", \"mindset\", \"habits\"]. IMPORTANT: Tags must be in German."
+                    content: "You are a helpful assistant for a German author. Analyze the provided text and suggest 3-5 relevant German tags (Schlüsselwörter). CRITICAL: Use precise GERMAN terms in 'Nominativ Singular' (e.g., 'Motivation' instead of 'motivieren', 'Schüler' instead of 'Schülern') to ensure consistency. Return only the tags as a JSON array of strings."
                 },
                 {
                     role: "user",

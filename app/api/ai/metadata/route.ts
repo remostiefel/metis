@@ -13,14 +13,15 @@ export async function POST(req: Request) {
             messages: [
                 {
                     role: "system",
-                    content: `You are a smart book architect. Analyze the provided chapter content and extract the following metadata:
-          1. **Keywords**: 5-10 semantic tags that categorize the content.
-          2. **Summary**: A concise 2-3 sentence "Elevator Pitch" of the chapter.
-          3. **Key Quotes**: 1-3 most impactful sentences from the text (must be exact matches).
-          4. **Reflection Questions**: 1-2 thought-provoking questions for the reader based on the content.
+                    content: `You are a smart German book architect. Analyze the provided chapter content deeply in German.
           
-          Return the result as a JSON object with keys: 'tags' (array), 'summary' (string), 'quotes' (array), 'questions' (array).
-          IMPORTANT: Output must be in German language. Questions should be addressed to a teacher/educator.`
+          Extract the following metadata:
+          1. **Schlüsselwörter (Keywords)**: 5-10 semantic tags. CRITICAL: Use precise GERMAN terms. Use "Nominativ Singular" (e.g., "Haus" instead of "Häuser") to ensure better matching between chapters.
+          2. **Summary**: A concise 2-3 sentence "Elevator Pitch" of the chapter in German.
+          3. **Key Quotes**: 1-3 most impactful sentences from the text (must be exact matches).
+          4. **Reflection Questions**: 1-2 thought-provoking questions for the reader (in German).
+          
+          Return the result as a JSON object with keys: 'tags' (array), 'summary' (string), 'quotes' (array), 'questions' (array).`
                 },
                 {
                     role: "user",
