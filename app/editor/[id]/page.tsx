@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PomodoroTimer } from '@/components/PomodoroTimer';
-import { Save, ArrowLeft, Download, Copy, Sparkles, Tag } from 'lucide-react';
+import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon } from 'lucide-react';
 
 interface EditorPageProps {
     params: Promise<{ id: string }>;
@@ -27,6 +27,15 @@ export default function EditorPage({ params }: EditorPageProps) {
     const [isGeneratingTags, setIsGeneratingTags] = useState(false);
     const [styleAnalysis, setStyleAnalysis] = useState<{ critique?: string; suggestions?: string[] } | null>(null);
     const [isCheckingStyle, setIsCheckingStyle] = useState(false);
+
+    const [feedback, setFeedback] = useState<{ summary?: string; points?: string[] } | null>(null);
+    const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
+
+    const [suggestedTitles, setSuggestedTitles] = useState<string[]>([]);
+    const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
+
+    const [references, setReferences] = useState<{ targetId: string; targetTitle: string; reason: string }[]>([]);
+    const [isGeneratingReferences, setIsGeneratingReferences] = useState(false);
 
     // Frontmatter state
     const [status, setStatus] = useState<'entwurf' | 'überarbeitung' | 'final'>('entwurf');
@@ -194,6 +203,69 @@ export default function EditorPage({ params }: EditorPageProps) {
             showToast('Fehler bei der Stil-Analyse', 'error');
         } finally {
             setIsCheckingStyle(false);
+        }
+    };
+
+    const handleGenerateFeedback = async () => {
+        setIsGeneratingFeedback(true);
+        try {
+            const response = await fetch('/api/ai/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content }),
+            });
+            const data = await response.json();
+            if (data.summary) {
+                setFeedback(data);
+                showToast('Feedback erhalten!', 'success');
+            }
+        } catch (error) {
+            console.error('Error generating feedback:', error);
+            showToast('Fehler beim Feedback', 'error');
+        } finally {
+            setIsGeneratingFeedback(false);
+        }
+    };
+
+    const handleGenerateTitles = async () => {
+        setIsGeneratingTitles(true);
+        try {
+            const response = await fetch('/api/ai/titles', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content }),
+            });
+            const data = await response.json();
+            if (data.titles) {
+                setSuggestedTitles(data.titles);
+                showToast('Titel-Vorschläge generiert!', 'success');
+            }
+        } catch (error) {
+            console.error('Error generating titles:', error);
+            showToast('Fehler bei Titeln', 'error');
+        } finally {
+            setIsGeneratingTitles(false);
+        }
+    };
+
+    const handleGenerateReferences = async () => {
+        setIsGeneratingReferences(true);
+        try {
+            const response = await fetch('/api/ai/references', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, currentId: id }),
+            });
+            const data = await response.json();
+            if (data.references) {
+                setReferences(data.references);
+                showToast('Querbezüge gefunden!', 'success');
+            }
+        } catch (error) {
+            console.error('Error generating references:', error);
+            showToast('Fehler bei Querbezügen', 'error');
+        } finally {
+            setIsGeneratingReferences(false);
         }
     };
 
@@ -446,6 +518,73 @@ export default function EditorPage({ params }: EditorPageProps) {
                                                     ))}
                                                 </ul>
                                             )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Chapter Feedback */}
+                                <div>
+                                    <button
+                                        onClick={handleGenerateFeedback}
+                                        disabled={isGeneratingFeedback}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-blue-50 text-blue-700 rounded-xl transition-colors text-sm font-medium border border-blue-100 shadow-sm"
+                                    >
+                                        <MessageSquare size={16} />
+                                        {isGeneratingFeedback ? 'Analysiere...' : 'Kapitel-Feedback'}
+                                    </button>
+                                    {feedback && (
+                                        <div className="mt-3 p-3 bg-white rounded-xl border border-blue-100 text-sm">
+                                            <p className="text-gray-700 font-medium mb-2">{feedback.summary}</p>
+                                            {feedback.points && feedback.points.length > 0 && (
+                                                <ul className="list-disc list-inside text-gray-600 space-y-1 text-xs">
+                                                    {feedback.points.map((point, i) => (
+                                                        <li key={i}>{point}</li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Title Suggestions */}
+                                <div>
+                                    <button
+                                        onClick={handleGenerateTitles}
+                                        disabled={isGeneratingTitles}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-green-50 text-green-700 rounded-xl transition-colors text-sm font-medium border border-green-100 shadow-sm"
+                                    >
+                                        <Type size={16} />
+                                        {isGeneratingTitles ? 'Denke nach...' : 'Titel-Ideen'}
+                                    </button>
+                                    {suggestedTitles.length > 0 && (
+                                        <ul className="mt-3 space-y-2">
+                                            {suggestedTitles.map((title, i) => (
+                                                <li key={i} className="p-2 bg-white rounded-lg border border-green-100 text-xs text-gray-700 font-medium cursor-pointer hover:bg-green-50 hover:text-green-800 transition-colors" onClick={() => setTitle(title)}>
+                                                    {title}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+
+                                {/* Smart Cross-References */}
+                                <div>
+                                    <button
+                                        onClick={handleGenerateReferences}
+                                        disabled={isGeneratingReferences}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-amber-50 text-amber-700 rounded-xl transition-colors text-sm font-medium border border-amber-100 shadow-sm"
+                                    >
+                                        <LinkIcon size={16} />
+                                        {isGeneratingReferences ? 'Suche...' : 'Querbezüge finden'}
+                                    </button>
+                                    {references.length > 0 && (
+                                        <div className="mt-3 space-y-2">
+                                            {references.map((ref, i) => (
+                                                <div key={i} className="p-2 bg-white rounded-lg border border-amber-100 text-xs">
+                                                    <div className="font-bold text-gray-800 mb-1">Zu: {ref.targetTitle}</div>
+                                                    <div className="text-gray-600">{ref.reason}</div>
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
                                 </div>
