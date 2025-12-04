@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { PomodoroTimer } from '@/components/PomodoroTimer';
-import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon, Brain, Quote, HelpCircle, Search, CheckCircle, FileDown } from 'lucide-react';
+import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon, Brain, Quote, HelpCircle, Search, CheckCircle, FileDown, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Quote as QuoteIcon, Link2 } from 'lucide-react';
 
 interface EditorPageProps {
     params: Promise<{ id: string }>;
@@ -55,6 +55,80 @@ export default function EditorPage({ params }: EditorPageProps) {
 
     // Research/Sources state
     const [sources, setSources] = useState<Source[]>([]);
+
+    // Textarea ref for markdown toolbar
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Markdown formatting helper
+    const applyMarkdownFormat = (prefix: string, suffix: string = prefix, placeholder: string = 'Text') => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = content.substring(start, end);
+
+        let newText: string;
+        let newCursorPos: number;
+
+        if (selectedText) {
+            // Wrap selected text
+            newText = content.substring(0, start) + prefix + selectedText + suffix + content.substring(end);
+            newCursorPos = start + prefix.length + selectedText.length + suffix.length;
+        } else {
+            // Insert placeholder
+            newText = content.substring(0, start) + prefix + placeholder + suffix + content.substring(end);
+            // Select the placeholder text
+            newCursorPos = start + prefix.length;
+        }
+
+        setContent(newText);
+
+        // Restore focus and selection after React re-renders
+        setTimeout(() => {
+            textarea.focus();
+            if (!selectedText) {
+                textarea.setSelectionRange(newCursorPos, newCursorPos + placeholder.length);
+            } else {
+                textarea.setSelectionRange(newCursorPos, newCursorPos);
+            }
+        }, 0);
+    };
+
+    const applyLineFormat = (prefix: string) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const lineStart = content.lastIndexOf('\n', start - 1) + 1;
+
+        const newText = content.substring(0, lineStart) + prefix + content.substring(lineStart);
+        setContent(newText);
+
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + prefix.length, start + prefix.length);
+        }, 0);
+    };
+
+    const insertLink = () => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = content.substring(start, end);
+
+        const linkText = selectedText || 'Link-Text';
+        const newText = content.substring(0, start) + `[${linkText}](url)` + content.substring(end);
+        setContent(newText);
+
+        setTimeout(() => {
+            textarea.focus();
+            const urlStart = start + linkText.length + 3;
+            textarea.setSelectionRange(urlStart, urlStart + 3);
+        }, 0);
+    };
 
     // Frontmatter state
     const [status, setStatus] = useState<'entwurf' | 'überarbeitung' | 'final'>('entwurf');
@@ -484,13 +558,103 @@ export default function EditorPage({ params }: EditorPageProps) {
                     {/* Editor */}
                     <div className={`transition-all duration-500 ${focusMode ? 'lg:col-span-1' : 'lg:col-span-8'}`}>
                         <div className={`
-                            bg-white rounded-2xl shadow-sm border border-gray-100 p-8 min-h-[calc(100vh-12rem)] transition-all duration-500
+                            bg-white rounded-2xl shadow-sm border border-gray-100 min-h-[calc(100vh-12rem)] transition-all duration-500
                             ${focusMode ? 'shadow-none border-none' : ''}
                         `}>
+                            {/* Markdown Toolbar */}
+                            <div className={`
+                                flex items-center gap-1 p-3 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl flex-wrap
+                                ${focusMode ? 'opacity-0 hover:opacity-100 transition-opacity duration-300' : ''}
+                            `}>
+                                {/* Headings */}
+                                <div className="flex items-center gap-0.5 mr-2 border-r border-gray-200 pr-2">
+                                    <button
+                                        onClick={() => applyLineFormat('# ')}
+                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                        title="Überschrift 1 (H1)"
+                                    >
+                                        <Heading1 size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => applyLineFormat('## ')}
+                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                        title="Überschrift 2 (H2)"
+                                    >
+                                        <Heading2 size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => applyLineFormat('### ')}
+                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                        title="Überschrift 3 (H3)"
+                                    >
+                                        <Heading3 size={18} />
+                                    </button>
+                                </div>
+
+                                {/* Text Formatting */}
+                                <div className="flex items-center gap-0.5 mr-2 border-r border-gray-200 pr-2">
+                                    <button
+                                        onClick={() => applyMarkdownFormat('**', '**', 'fett')}
+                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                        title="Fett (Cmd+B)"
+                                    >
+                                        <Bold size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => applyMarkdownFormat('*', '*', 'kursiv')}
+                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                        title="Kursiv (Cmd+I)"
+                                    >
+                                        <Italic size={18} />
+                                    </button>
+                                </div>
+
+                                {/* Block Formatting */}
+                                <div className="flex items-center gap-0.5 mr-2 border-r border-gray-200 pr-2">
+                                    <button
+                                        onClick={() => applyLineFormat('> ')}
+                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                        title="Zitat"
+                                    >
+                                        <QuoteIcon size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => applyLineFormat('- ')}
+                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                        title="Aufzählung"
+                                    >
+                                        <List size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => applyLineFormat('1. ')}
+                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                        title="Nummerierte Liste"
+                                    >
+                                        <ListOrdered size={18} />
+                                    </button>
+                                </div>
+
+                                {/* Link */}
+                                <button
+                                    onClick={insertLink}
+                                    className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                    title="Link einfügen"
+                                >
+                                    <Link2 size={18} />
+                                </button>
+
+                                {/* Hint */}
+                                <span className="ml-auto text-xs text-gray-400 hidden sm:block">
+                                    Markdown-Formatierung
+                                </span>
+                            </div>
+
+                            {/* Textarea */}
                             <textarea
+                                ref={textareaRef}
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
-                                className="w-full h-full min-h-[600px] font-serif text-lg leading-relaxed text-gray-700 border-none focus:outline-none focus:ring-0 resize-none placeholder-gray-300"
+                                className="w-full h-full min-h-[600px] font-serif text-lg leading-relaxed text-gray-700 border-none focus:outline-none focus:ring-0 resize-none placeholder-gray-300 p-8"
                                 placeholder="Hier beginnt deine Geschichte..."
                                 spellCheck={false}
                             />
