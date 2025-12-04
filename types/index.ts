@@ -13,6 +13,9 @@ export interface ModuleFrontmatter {
   urgency: Priority;
   created: string;
   updated: string;
+  summary?: string;
+  quotes?: string[];
+  questions?: string[];
 }
 
 export interface Module extends ModuleFrontmatter {

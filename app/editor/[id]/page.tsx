@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PomodoroTimer } from '@/components/PomodoroTimer';
-import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon } from 'lucide-react';
+import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon, Brain, Quote, HelpCircle } from 'lucide-react';
 
 interface EditorPageProps {
     params: Promise<{ id: string }>;
@@ -36,6 +36,9 @@ export default function EditorPage({ params }: EditorPageProps) {
 
     const [references, setReferences] = useState<{ targetId: string; targetTitle: string; reason: string }[]>([]);
     const [isGeneratingReferences, setIsGeneratingReferences] = useState(false);
+
+    const [smartMetadata, setSmartMetadata] = useState<{ summary?: string; quotes?: string[]; questions?: string[] } | null>(null);
+    const [isGeneratingMetadata, setIsGeneratingMetadata] = useState(false);
 
     // Frontmatter state
     const [status, setStatus] = useState<'entwurf' | 'überarbeitung' | 'final'>('entwurf');
@@ -118,6 +121,10 @@ export default function EditorPage({ params }: EditorPageProps) {
                         status,
                         importance,
                         urgency,
+                        tags, // Save tags
+                        summary: smartMetadata?.summary,
+                        quotes: smartMetadata?.quotes,
+                        questions: smartMetadata?.questions,
                     },
                 }),
             });
@@ -266,6 +273,33 @@ export default function EditorPage({ params }: EditorPageProps) {
             showToast('Fehler bei Querbezügen', 'error');
         } finally {
             setIsGeneratingReferences(false);
+        }
+    };
+
+    const handleGenerateMetadata = async () => {
+        setIsGeneratingMetadata(true);
+        try {
+            const response = await fetch('/api/ai/metadata', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content }),
+            });
+            const data = await response.json();
+
+            if (data.tags) setTags(prev => [...new Set([...prev, ...data.tags])]);
+
+            setSmartMetadata({
+                summary: data.summary,
+                quotes: data.quotes,
+                questions: data.questions
+            });
+
+            showToast('Smarte Metadaten generiert!', 'success');
+        } catch (error) {
+            console.error('Error generating metadata:', error);
+            showToast('Fehler bei Metadaten', 'error');
+        } finally {
+            setIsGeneratingMetadata(false);
         }
     };
 
@@ -585,6 +619,44 @@ export default function EditorPage({ params }: EditorPageProps) {
                                                     <div className="text-gray-600">{ref.reason}</div>
                                                 </div>
                                             ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Smart Metadata */}
+                                <div>
+                                    <button
+                                        onClick={handleGenerateMetadata}
+                                        disabled={isGeneratingMetadata}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-teal-50 text-teal-700 rounded-xl transition-colors text-sm font-medium border border-teal-100 shadow-sm"
+                                    >
+                                        <Brain size={16} />
+                                        {isGeneratingMetadata ? 'Analysiere...' : 'Smart Metadata'}
+                                    </button>
+                                    {smartMetadata && (
+                                        <div className="mt-3 space-y-3">
+                                            {smartMetadata.summary && (
+                                                <div className="p-3 bg-white rounded-xl border border-teal-100 text-sm">
+                                                    <div className="font-bold text-teal-800 mb-1 flex items-center gap-1"><Brain size={12} /> Summary</div>
+                                                    <p className="text-gray-600 text-xs">{smartMetadata.summary}</p>
+                                                </div>
+                                            )}
+                                            {smartMetadata.quotes && smartMetadata.quotes.length > 0 && (
+                                                <div className="p-3 bg-white rounded-xl border border-teal-100 text-sm">
+                                                    <div className="font-bold text-teal-800 mb-1 flex items-center gap-1"><Quote size={12} /> Zitate</div>
+                                                    <ul className="list-disc list-inside text-gray-600 space-y-1 text-xs italic">
+                                                        {smartMetadata.quotes.map((q, i) => <li key={i}>"{q}"</li>)}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                            {smartMetadata.questions && smartMetadata.questions.length > 0 && (
+                                                <div className="p-3 bg-white rounded-xl border border-teal-100 text-sm">
+                                                    <div className="font-bold text-teal-800 mb-1 flex items-center gap-1"><HelpCircle size={12} /> Fragen</div>
+                                                    <ul className="list-disc list-inside text-gray-600 space-y-1 text-xs">
+                                                        {smartMetadata.questions.map((q, i) => <li key={i}>{q}</li>)}
+                                                    </ul>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
