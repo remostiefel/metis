@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PomodoroTimer } from '@/components/PomodoroTimer';
-import { Save, ArrowLeft, Download, Copy } from 'lucide-react';
+import { Save, ArrowLeft, Download, Copy, Sparkles, Tag } from 'lucide-react';
 
 interface EditorPageProps {
     params: Promise<{ id: string }>;
@@ -21,6 +21,12 @@ export default function EditorPage({ params }: EditorPageProps) {
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [showPomodoro, setShowPomodoro] = useState(false);
     const [focusMode, setFocusMode] = useState(false);
+
+    // AI State
+    const [tags, setTags] = useState<string[]>([]);
+    const [isGeneratingTags, setIsGeneratingTags] = useState(false);
+    const [styleAnalysis, setStyleAnalysis] = useState<{ critique?: string; suggestions?: string[] } | null>(null);
+    const [isCheckingStyle, setIsCheckingStyle] = useState(false);
 
     // Frontmatter state
     const [status, setStatus] = useState<'entwurf' | 'überarbeitung' | 'final'>('entwurf');
@@ -146,6 +152,48 @@ export default function EditorPage({ params }: EditorPageProps) {
         } catch (err) {
             console.error('Failed to copy: ', err);
             showToast('Fehler beim Kopieren', 'error');
+        }
+    };
+
+    const handleGenerateTags = async () => {
+        setIsGeneratingTags(true);
+        try {
+            const response = await fetch('/api/ai/tags', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content }),
+            });
+            const data = await response.json();
+            if (data.tags) {
+                setTags(data.tags);
+                showToast('Tags generiert!', 'success');
+            }
+        } catch (error) {
+            console.error('Error generating tags:', error);
+            showToast('Fehler bei der Tag-Generierung', 'error');
+        } finally {
+            setIsGeneratingTags(false);
+        }
+    };
+
+    const handleCheckStyle = async () => {
+        setIsCheckingStyle(true);
+        try {
+            const response = await fetch('/api/ai/style', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content }),
+            });
+            const data = await response.json();
+            if (data.critique) {
+                setStyleAnalysis(data);
+                showToast('Stil-Analyse fertig!', 'success');
+            }
+        } catch (error) {
+            console.error('Error checking style:', error);
+            showToast('Fehler bei der Stil-Analyse', 'error');
+        } finally {
+            setIsCheckingStyle(false);
         }
     };
 
@@ -346,6 +394,61 @@ export default function EditorPage({ params }: EditorPageProps) {
                                     <Download size={16} />
                                     Als Markdown (.md) laden
                                 </button>
+                            </div>
+                        </div>
+
+                        {/* AI Assistant */}
+                        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl shadow-sm p-6 border border-indigo-100">
+                            <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <Sparkles size={16} className="text-indigo-500" />
+                                AI Assistant
+                            </h3>
+
+                            <div className="space-y-4">
+                                {/* Tagging */}
+                                <div>
+                                    <button
+                                        onClick={handleGenerateTags}
+                                        disabled={isGeneratingTags}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-indigo-50 text-indigo-700 rounded-xl transition-colors text-sm font-medium border border-indigo-100 shadow-sm"
+                                    >
+                                        <Tag size={16} />
+                                        {isGeneratingTags ? 'Analysiere...' : 'Tags generieren'}
+                                    </button>
+                                    {tags.length > 0 && (
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            {tags.map((tag, i) => (
+                                                <span key={i} className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-md font-medium">
+                                                    #{tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Style Check */}
+                                <div>
+                                    <button
+                                        onClick={handleCheckStyle}
+                                        disabled={isCheckingStyle}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-purple-50 text-purple-700 rounded-xl transition-colors text-sm font-medium border border-purple-100 shadow-sm"
+                                    >
+                                        <Sparkles size={16} />
+                                        {isCheckingStyle ? 'Prüfe Stil...' : 'Stil-Check'}
+                                    </button>
+                                    {styleAnalysis && (
+                                        <div className="mt-3 p-3 bg-white rounded-xl border border-purple-100 text-sm">
+                                            <p className="text-gray-700 font-medium mb-2">{styleAnalysis.critique}</p>
+                                            {styleAnalysis.suggestions && styleAnalysis.suggestions.length > 0 && (
+                                                <ul className="list-disc list-inside text-gray-600 space-y-1 text-xs">
+                                                    {styleAnalysis.suggestions.map((suggestion, i) => (
+                                                        <li key={i}>{suggestion}</li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
