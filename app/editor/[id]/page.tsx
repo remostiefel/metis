@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PomodoroTimer } from '@/components/PomodoroTimer';
-import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon, Brain, Quote, HelpCircle } from 'lucide-react';
+import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon, Brain, Quote, HelpCircle, Search, CheckCircle } from 'lucide-react';
 
 interface EditorPageProps {
     params: Promise<{ id: string }>;
@@ -39,6 +39,12 @@ export default function EditorPage({ params }: EditorPageProps) {
 
     const [smartMetadata, setSmartMetadata] = useState<{ summary?: string; quotes?: string[]; questions?: string[] } | null>(null);
     const [isGeneratingMetadata, setIsGeneratingMetadata] = useState(false);
+
+    const [quoteQuery, setQuoteQuery] = useState('');
+    const [foundQuotes, setFoundQuotes] = useState<{ text: string; author: string; context: string }[]>([]);
+    const [isSearchingQuotes, setIsSearchingQuotes] = useState(false);
+    const [quoteVerification, setQuoteVerification] = useState<{ isCorrect: boolean; correction: string; author: string; origin: string } | null>(null);
+    const [isVerifyingQuote, setIsVerifyingQuote] = useState(false);
 
     // Frontmatter state
     const [status, setStatus] = useState<'entwurf' | 'überarbeitung' | 'final'>('entwurf');
@@ -300,6 +306,47 @@ export default function EditorPage({ params }: EditorPageProps) {
             showToast('Fehler bei Metadaten', 'error');
         } finally {
             setIsGeneratingMetadata(false);
+        }
+    };
+
+    const handleSearchQuotes = async () => {
+        if (!quoteQuery.trim()) return;
+        setIsSearchingQuotes(true);
+        try {
+            const response = await fetch('/api/ai/quotes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'search', query: quoteQuery }),
+            });
+            const data = await response.json();
+            if (data.quotes) {
+                setFoundQuotes(data.quotes);
+                showToast('Zitate gefunden!', 'success');
+            }
+        } catch (error) {
+            console.error('Error searching quotes:', error);
+            showToast('Fehler bei der Zitat-Suche', 'error');
+        } finally {
+            setIsSearchingQuotes(false);
+        }
+    };
+
+    const handleVerifyQuote = async (quoteText: string) => {
+        setIsVerifyingQuote(true);
+        try {
+            const response = await fetch('/api/ai/quotes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'verify', quote: quoteText }),
+            });
+            const data = await response.json();
+            setQuoteVerification(data);
+            showToast('Zitat geprüft!', 'success');
+        } catch (error) {
+            console.error('Error verifying quote:', error);
+            showToast('Fehler bei der Prüfung', 'error');
+        } finally {
+            setIsVerifyingQuote(false);
         }
     };
 
@@ -659,6 +706,90 @@ export default function EditorPage({ params }: EditorPageProps) {
                                             )}
                                         </div>
                                     )}
+                                </div>
+
+                                {/* Quote Manager */}
+                                <div>
+                                    <div className="p-4 bg-white rounded-2xl border border-orange-100 shadow-sm">
+                                        <h4 className="text-xs font-bold text-orange-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                            <Quote size={14} className="text-orange-500" />
+                                            Zitat-Manager
+                                        </h4>
+
+                                        {/* Search */}
+                                        <div className="flex gap-2 mb-3">
+                                            <input
+                                                type="text"
+                                                value={quoteQuery}
+                                                onChange={(e) => setQuoteQuery(e.target.value)}
+                                                placeholder="Thema (z.B. Mut)"
+                                                className="flex-1 px-3 py-2 bg-gray-50 border-none rounded-lg text-xs focus:ring-1 focus:ring-orange-200"
+                                                onKeyDown={(e) => e.key === 'Enter' && handleSearchQuotes()}
+                                            />
+                                            <button
+                                                onClick={handleSearchQuotes}
+                                                disabled={isSearchingQuotes}
+                                                className="p-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors"
+                                            >
+                                                <Search size={14} />
+                                            </button>
+                                        </div>
+
+                                        {/* Results */}
+                                        {foundQuotes.length > 0 && (
+                                            <div className="space-y-2 mb-4">
+                                                {foundQuotes.map((q, i) => (
+                                                    <div key={i} className="p-2 bg-orange-50/50 rounded-lg border border-orange-100 text-xs group relative">
+                                                        <p className="italic text-gray-700 mb-1">"{q.text}"</p>
+                                                        <p className="text-gray-500 font-medium">— {q.author}</p>
+                                                        <button
+                                                            onClick={() => {
+                                                                setContent(prev => prev + `\n\n> "${q.text}"\n> — *${q.author}*`);
+                                                                showToast('Zitat eingefügt', 'success');
+                                                            }}
+                                                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 bg-white rounded shadow-sm text-orange-600 hover:text-orange-800"
+                                                            title="Einfügen"
+                                                        >
+                                                            <Copy size={12} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Verify Button (Contextual) */}
+                                        <button
+                                            onClick={() => {
+                                                const selection = window.getSelection()?.toString();
+                                                if (selection) handleVerifyQuote(selection);
+                                                else showToast('Markiere zuerst ein Zitat!', 'error');
+                                            }}
+                                            disabled={isVerifyingQuote}
+                                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white hover:bg-orange-50 text-orange-700 rounded-lg transition-colors text-xs font-medium border border-orange-100 border-dashed"
+                                        >
+                                            <CheckCircle size={14} />
+                                            Markiertes Zitat prüfen
+                                        </button>
+
+                                        {/* Verification Result */}
+                                        {quoteVerification && (
+                                            <div className={`mt-3 p-3 rounded-xl border text-xs ${quoteVerification.isCorrect ? 'bg-green-50 border-green-100 text-green-800' : 'bg-red-50 border-red-100 text-red-800'}`}>
+                                                <div className="font-bold mb-1 flex items-center gap-1">
+                                                    {quoteVerification.isCorrect ? <CheckCircle size={12} /> : <HelpCircle size={12} />}
+                                                    {quoteVerification.isCorrect ? 'Korrekt!' : 'Vorsicht!'}
+                                                </div>
+                                                {!quoteVerification.isCorrect && (
+                                                    <>
+                                                        <p className="mb-1">Eigentlich von: <strong>{quoteVerification.author}</strong></p>
+                                                        <p className="text-xs opacity-80">{quoteVerification.origin}</p>
+                                                    </>
+                                                )}
+                                                {quoteVerification.isCorrect && (
+                                                    <p className="text-xs opacity-80">{quoteVerification.origin}</p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
