@@ -1,6 +1,8 @@
+```javascript
 import Link from 'next/link';
 import { getAllModules } from '@/lib/markdown';
 import { EisenhowerMatrix } from '@/components/EisenhowerMatrix';
+import { KnowledgeGraph } from '@/components/KnowledgeGraph';
 import { ProgressBar } from '@/components/ProgressBar';
 import { getStats } from '@/lib/modules';
 import { CloudBackupButton } from '@/components/CloudBackupButton';
@@ -42,23 +44,50 @@ export default function Home() {
       </header >
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-3 gap-6 mb-10">
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="text-sm text-gray-500 font-medium mb-1 uppercase tracking-wider">Gesamt Module</div>
-            <div className="text-4xl font-extrabold text-gray-800">{stats.totalModules}</div>
-          </div>
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="text-sm text-gray-500 font-medium mb-1 uppercase tracking-wider">Fertiggestellt</div>
-            <div className="text-4xl font-extrabold text-success-foreground">{stats.completedModules}</div>
-          </div>
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="text-sm text-gray-500 font-medium mb-1 uppercase tracking-wider">Wörter geschrieben</div>
-            <div className="text-4xl font-extrabold text-primary-foreground">
-              {stats.totalWords.toLocaleString('de-DE')}
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                        <BookOpen size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium">Gesamtfortschritt</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{stats.progress}%</h3>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
+                        <FileText size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium">Wörter gesamt</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{stats.totalWords.toLocaleString()}</h3>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                        <Clock size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium">Lesezeit</p>
+                        <h3 className="text-2xl font-bold text-gray-900">~{Math.ceil(stats.totalWords / 250)} Min.</h3>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <TrendingUp size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium">Module</p>
+                        <h3 className="text-2xl font-bold text-gray-900">{stats.totalModules}</h3>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
+
+            {/* Knowledge Graph */}
+            <div className="mb-12">
+                <KnowledgeGraph modules={modules} />
+            </div>
 
         {/* Progress Bar */}
         <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 mb-10">

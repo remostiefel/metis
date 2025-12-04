@@ -13,7 +13,7 @@ export async function POST(req: Request) {
             messages: [
                 {
                     role: "system",
-                    content: "You are a creative copywriter. Generate 5 catchy, relevant, and engaging titles for the provided text. The titles should be suitable for a non-fiction book chapter. Return the result as a JSON object with a 'titles' array of strings."
+                    content: "You are a creative copywriter. Generate 5 catchy, relevant, and engaging titles for the provided text. The titles should be suitable for a non-fiction book chapter for teachers. Return the result as a JSON object with a 'titles' array of strings. IMPORTANT: Output must be in German language."
                 },
                 {
                     role: "user",

@@ -16,11 +16,11 @@ export async function POST(req: Request) {
             systemPrompt = `You are a well-read literary assistant. 
       Find 3-5 famous, impactful quotes related to the user's topic. 
       For each quote, provide:
-      - 'text': The quote itself.
+      - 'text': The quote itself (in German if possible, or original with German translation).
       - 'author': The author's name.
       - 'context': A very brief context (e.g., "From 'The Republic'").
       
-      Return as a JSON object with a 'quotes' array.`;
+      Return as a JSON object with a 'quotes' array. IMPORTANT: Output context/commentary must be in German.`;
             userContent = `Topic: ${query}`;
         } else if (action === 'verify') {
             systemPrompt = `You are a fact-checker for quotes. 
@@ -32,7 +32,9 @@ export async function POST(req: Request) {
       - 'correction': string (if incorrect, otherwise null)
       - 'author': string (correct author)
       - 'origin': string (book/speech/year)
-      - 'context': string (brief context)`;
+      - 'context': string (brief context)
+      
+      IMPORTANT: Output fields (correction, origin, context) must be in German language.`;
             userContent = `Quote to verify: "${quote}"`;
         } else {
             return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

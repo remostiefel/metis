@@ -13,7 +13,7 @@ export async function POST(req: Request) {
             messages: [
                 {
                     role: "system",
-                    content: "You are a professional editor. Analyze the text for style issues, specifically focusing on: 1. Passive voice usage. 2. overly complex sentences (Schachtelsätze). 3. Repetitive words. Provide a brief critique and 1-2 concrete suggestions for improvement. Keep the tone encouraging but professional. Return the result as JSON with 'critique' and 'suggestions' fields."
+                    content: "You are a professional editor. Analyze the text for style issues, specifically focusing on: 1. Passive voice usage. 2. overly complex sentences (Schachtelsätze). 3. Repetitive words. Provide a brief critique and 1-2 concrete suggestions for improvement. Keep the tone encouraging but professional. Return the result as JSON with 'critique' and 'suggestions' fields. IMPORTANT: Output must be in German language."
                 },
                 {
                     role: "user",

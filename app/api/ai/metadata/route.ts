@@ -19,7 +19,8 @@ export async function POST(req: Request) {
           3. **Key Quotes**: 1-3 most impactful sentences from the text (must be exact matches).
           4. **Reflection Questions**: 1-2 thought-provoking questions for the reader based on the content.
           
-          Return the result as a JSON object with keys: 'tags' (array), 'summary' (string), 'quotes' (array), 'questions' (array).`
+          Return the result as a JSON object with keys: 'tags' (array), 'summary' (string), 'quotes' (array), 'questions' (array).
+          IMPORTANT: Output must be in German language. Questions should be addressed to a teacher/educator.`
                 },
                 {
                     role: "user",

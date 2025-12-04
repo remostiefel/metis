@@ -32,7 +32,7 @@ export async function POST(req: Request) {
           - 'targetTitle': the title of the referenced module
           - 'reason': a brief explanation of why this connection is relevant (e.g., "Expands on the concept of...")
           
-          Only suggest strong, relevant connections.`
+          Only suggest strong, relevant connections. IMPORTANT: Output must be in German language.`
                 },
                 {
                     role: "user",
