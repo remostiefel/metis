@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PomodoroTimer } from '@/components/PomodoroTimer';
-import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon, Brain, Quote, HelpCircle, Search, CheckCircle } from 'lucide-react';
+import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon, Brain, Quote, HelpCircle, Search, CheckCircle, FileDown } from 'lucide-react';
 
 interface EditorPageProps {
     params: Promise<{ id: string }>;
 }
 
 import { useToast } from '@/components/ui/Toast';
+import { exportToPDF } from '@/lib/pdfExport';
 
 export default function EditorPage({ params }: EditorPageProps) {
     const { showToast } = useToast();
@@ -174,6 +175,19 @@ export default function EditorPage({ params }: EditorPageProps) {
         } catch (err) {
             console.error('Failed to copy: ', err);
             showToast('Fehler beim Kopieren', 'error');
+        }
+    };
+
+    const handleExportPDF = () => {
+        try {
+            exportToPDF({
+                title: title || 'Unbenanntes Kapitel',
+                content: content
+            });
+            showToast('PDF erfolgreich exportiert', 'success');
+        } catch (err) {
+            console.error('Failed to export PDF: ', err);
+            showToast('Fehler beim PDF-Export', 'error');
         }
     };
 
@@ -534,18 +548,25 @@ export default function EditorPage({ params }: EditorPageProps) {
                             </h3>
                             <div className="space-y-3">
                                 <button
-                                    onClick={handleCopyToClipboard}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl transition-colors text-sm font-medium border border-gray-100"
-                                >
-                                    <Copy size={16} />
-                                    Text kopieren
-                                </button>
-                                <button
                                     onClick={handleExportMarkdown}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl transition-colors text-sm font-medium border border-gray-100"
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-blue-50 text-blue-600 rounded-xl transition-colors text-sm font-medium border border-blue-100 shadow-sm"
                                 >
                                     <Download size={16} />
-                                    Als Markdown (.md) laden
+                                    Markdown (.md)
+                                </button>
+                                <button
+                                    onClick={handleExportPDF}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-red-50 text-red-600 rounded-xl transition-colors text-sm font-medium border border-red-100 shadow-sm"
+                                >
+                                    <FileDown size={16} />
+                                    PDF Export
+                                </button>
+                                <button
+                                    onClick={handleCopyToClipboard}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-600 rounded-xl transition-colors text-sm font-medium border border-gray-100 shadow-sm"
+                                >
+                                    <Copy size={16} />
+                                    Kopieren
                                 </button>
                             </div>
                         </div>

@@ -1,4 +1,3 @@
-```javascript
 import Link from 'next/link';
 import { getAllModules } from '@/lib/markdown';
 import { EisenhowerMatrix } from '@/components/EisenhowerMatrix';
@@ -44,50 +43,50 @@ export default function Home() {
       </header >
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                        <BookOpen size={24} />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium">Gesamtfortschritt</p>
-                        <h3 className="text-2xl font-bold text-gray-900">{stats.progress}%</h3>
-                    </div>
-                </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
-                        <FileText size={24} />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium">Wörter gesamt</p>
-                        <h3 className="text-2xl font-bold text-gray-900">{stats.totalWords.toLocaleString()}</h3>
-                    </div>
-                </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-                        <Clock size={24} />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium">Lesezeit</p>
-                        <h3 className="text-2xl font-bold text-gray-900">~{Math.ceil(stats.totalWords / 250)} Min.</h3>
-                    </div>
-                </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                        <TrendingUp size={24} />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium">Module</p>
-                        <h3 className="text-2xl font-bold text-gray-900">{stats.totalModules}</h3>
-                    </div>
-                </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+              <BookOpen size={24} />
             </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Gesamtfortschritt</p>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.progress}%</h3>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
+              <FileText size={24} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Wörter gesamt</p>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.totalWords.toLocaleString()}</h3>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+              <Clock size={24} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Lesezeit</p>
+              <h3 className="text-2xl font-bold text-gray-900">~{Math.ceil(stats.totalWords / 250)} Min.</h3>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+              <TrendingUp size={24} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Module</p>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.totalModules}</h3>
+            </div>
+          </div>
+        </div>
 
-            {/* Knowledge Graph */}
-            <div className="mb-12">
-                <KnowledgeGraph modules={modules} />
-            </div>
+        {/* Knowledge Graph */}
+        <div className="mb-12">
+          <KnowledgeGraph modules={modules} />
+        </div>
 
         {/* Progress Bar */}
         <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 mb-10">
