@@ -16,12 +16,13 @@ export async function POST(req: Request) {
             systemPrompt = `You are a well-read literary assistant. 
       Find 3-5 famous, impactful quotes related to the user's topic. 
       For each quote, provide:
-      - 'text': The quote itself (in German if possible, or original with German translation).
+      - 'text': The quote in GERMAN language. If the original is not German, provide a high-quality German translation.
       - 'author': The author's name.
-      - 'context': A very brief context (e.g., "From 'The Republic'").
+      - 'context': A very brief context in German (e.g., "Aus 'Der Staat' von Platon").
       
-      Return as a JSON object with a 'quotes' array. IMPORTANT: Output context/commentary must be in German.`;
-            userContent = `Topic: ${query}`;
+      CRITICAL: ALL text fields must be in German. Do not return English quotes.
+      Return as a JSON object with a 'quotes' array.`;
+            userContent = `Thema: ${query}`;
         } else if (action === 'verify') {
             systemPrompt = `You are a fact-checker for quotes. 
       Analyze the provided quote. Determine if it is correctly attributed.
