@@ -46,8 +46,10 @@ export function KnowledgeGraph({ modules }: KnowledgeGraphProps) {
                 const m1 = modules[i];
                 const m2 = modules[j];
 
-                // Link if they share tags
-                const sharedTags = m1.tags.filter(t => m2.tags.includes(t));
+                // Link if they share tags (only if both have tags)
+                const m1Tags = m1.tags || [];
+                const m2Tags = m2.tags || [];
+                const sharedTags = m1Tags.filter(t => m2Tags.includes(t));
                 if (sharedTags.length > 0) {
                     links.push({
                         source: m1.id,

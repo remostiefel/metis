@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { PomodoroTimer } from '@/components/PomodoroTimer';
 import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon, Brain, Quote, HelpCircle, Search, CheckCircle, FileDown, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Quote as QuoteIcon, Link2 } from 'lucide-react';
 
@@ -19,6 +20,7 @@ import { PersonaTester } from '@/components/PersonaTester';
 import { DialecticEngine } from '@/components/DialecticEngine';
 
 export default function EditorPage({ params }: EditorPageProps) {
+    const router = useRouter();
     const { showToast } = useToast();
     const [id, setId] = useState<string>('');
     const [content, setContent] = useState('');
@@ -206,7 +208,21 @@ export default function EditorPage({ params }: EditorPageProps) {
     const handleSave = async (isAutoSave = false) => {
         if (!isAutoSave) setSaving(true);
         try {
-            const response = await fetch(`/api/modules/${id}/save`, {
+            let targetId = id;
+            let shouldRedirect = false;
+
+            // If this is a new module (template), generate a new ID from the title
+            if (id === 'template') {
+                const slug = title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/(^-|-$)+/g, '') || `untitled-${Date.now()}`;
+
+                targetId = slug;
+                shouldRedirect = true;
+            }
+
+            const response = await fetch(`/api/modules/${targetId}/save`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -214,7 +230,7 @@ export default function EditorPage({ params }: EditorPageProps) {
                 body: JSON.stringify({
                     content,
                     frontmatter: {
-                        id,
+                        id: targetId,
                         title,
                         status,
                         importance,
@@ -232,6 +248,16 @@ export default function EditorPage({ params }: EditorPageProps) {
             }
 
             setLastSaved(new Date());
+
+            if (shouldRedirect) {
+                setId(targetId);
+                window.history.replaceState(null, '', `/editor/${targetId}`);
+                // router.replace would trigger a reload/re-fetch which might be jarring, 
+                // but we want to ensure the URL reflects the new ID.
+                // For now, let's just update the URL silently or use router if we want a full refresh.
+                // router.replace(`/editor/${targetId}`); 
+            }
+
             if (!isAutoSave) showToast('Modul erfolgreich gespeichert!', 'success');
         } catch (error) {
             console.error('Error saving module:', error);
@@ -499,8 +525,14 @@ export default function EditorPage({ params }: EditorPageProps) {
                             >
                                 <ArrowLeft size={20} />
                             </Link>
-                            <div>
-                                <h1 className="text-lg font-bold text-gray-800 tracking-tight">{title}</h1>
+                            <div className="flex-1">
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    placeholder="Kapitel-Titel eingeben..."
+                                    className="text-lg font-bold text-gray-800 tracking-tight bg-transparent border-none focus:outline-none focus:ring-0 w-full"
+                                />
                                 <div className="flex items-center gap-2 text-xs text-gray-500">
                                     <span>Modul: {id}</span>
                                     {lastSaved && (
@@ -666,7 +698,7 @@ export default function EditorPage({ params }: EditorPageProps) {
 
                     {/* Sidebar - Hidden in Focus Mode */}
                     <div className={`
-                        lg:col-span-4 space-y-6 transition-all duration-500
+                        lg:col-span-4 space-y-6 transition-all duration-500 sticky top-24 h-fit max-h-[calc(100vh-6rem)] overflow-y-auto pr-2
                         ${focusMode ? 'opacity-0 translate-x-20 hidden' : 'opacity-100 translate-x-0 block'}
                     `}>
                         {showPomodoro && (

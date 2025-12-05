@@ -1,6 +1,6 @@
 ---
-id: template
-title: Neues Modul
+id: mein-testkapitel
+title: Mein Testkapitel
 status: entwurf
 importance: medium
 urgency: low

@@ -57,7 +57,7 @@ export function EisenhowerMatrix({ modules }: EisenhowerMatrixProps) {
                     </div>
                 ) : (
                     modules.map((module) => (
-                        <ModuleCard key={module.id} module={module} />
+                        <ModuleCard key={module.id || module.slug} module={module} />
                     ))
                 )}
             </div>
