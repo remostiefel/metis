@@ -18,7 +18,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-                Willkommen zurück, Remo! 👋
+                Willkommen zurück, Remo!
               </h1>
               <p className="text-sm text-gray-500 mt-1 font-medium">
                 Dein persönliches METIS Schreib-Studio
@@ -34,7 +34,7 @@ export default function Home() {
               </Link>
               <Link
                 href="/editor/template"
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-all text-sm font-bold shadow-sm hover:shadow-md"
+                className="px-4 py-2 bg-rose-50 text-rose-700 border border-rose-100 rounded-full hover:bg-rose-100 transition-all text-sm font-bold shadow-sm hover:shadow-md"
               >
                 + Neues Modul
               </Link>
@@ -109,15 +109,15 @@ export default function Home() {
         <div className="mt-12 flex gap-6 justify-center">
           <Link
             href="/modules"
-            className="px-8 py-4 bg-white border-2 border-primary text-primary-foreground rounded-full hover:bg-primary/10 transition-all font-bold shadow-sm hover:shadow-md"
+            className="px-8 py-4 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-all font-bold shadow-sm hover:shadow-md"
           >
-            📚 Alle Module anzeigen
+            Alle Module anzeigen
           </Link>
           <Link
             href="/editor/template"
-            className="px-8 py-4 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/90 transition-all font-bold shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            className="px-8 py-4 bg-rose-50 text-rose-700 rounded-full hover:bg-rose-100 transition-all font-bold shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
           >
-            ✍️ Schreib-Session starten
+            Schreib-Session starten
           </Link>
         </div>
       </main>

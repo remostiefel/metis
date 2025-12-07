@@ -4,10 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PomodoroTimer } from '@/components/PomodoroTimer';
-import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon, Brain, Quote, HelpCircle, Search, CheckCircle, FileDown, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Quote as QuoteIcon, Link2 } from 'lucide-react';
+import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon, Brain, Quote, HelpCircle, Search, CheckCircle, FileDown, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Quote as QuoteIcon, Link2, AlignCenter, Palette, BookOpen, Edit3, Highlighter, CheckSquare, X, Settings } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import { FormatSettingsDialog } from '@/components/FormatSettingsDialog';
 
 interface EditorPageProps {
-    params: Promise<{ id: string }>;
+    params: Promise<{ slug: string[] }>;
 }
 
 import { useToast } from '@/components/ui/Toast';
@@ -25,11 +30,24 @@ export default function EditorPage({ params }: EditorPageProps) {
     const [id, setId] = useState<string>('');
     const [content, setContent] = useState('');
     const [title, setTitle] = useState('');
+    const [kapitel, setKapitel] = useState<string>('');
+    const [unterkapitel, setUnterkapitel] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [showPomodoro, setShowPomodoro] = useState(false);
     const [focusMode, setFocusMode] = useState(false);
+
+    // Reading Mode State
+    const [viewMode, setViewMode] = useState<'edit' | 'read'>('edit');
+    const [reviewNotes, setReviewNotes] = useState('');
+    const [selectionTooltip, setSelectionTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+
+    // Custom Formats State
+    const [showFormatSettings, setShowFormatSettings] = useState(false);
+    // We store the styles as a CSS string to inject
+    const [customStyles, setCustomStyles] = useState('');
 
     // AI State
     const [tags, setTags] = useState<string[]>([]);
@@ -68,33 +86,59 @@ export default function EditorPage({ params }: EditorPageProps) {
 
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
+        const scrollTop = textarea.scrollTop; // Capture scroll position
         const selectedText = content.substring(start, end);
 
         let newText: string;
-        let newCursorPos: number;
+        let newCursorStart: number;
+        let newCursorEnd: number;
 
         if (selectedText) {
             // Wrap selected text
             newText = content.substring(0, start) + prefix + selectedText + suffix + content.substring(end);
-            newCursorPos = start + prefix.length + selectedText.length + suffix.length;
+            // Selection should wrap the original text (now formatted)
+            newCursorStart = start + prefix.length;
+            newCursorEnd = start + prefix.length + selectedText.length;
         } else {
             // Insert placeholder
             newText = content.substring(0, start) + prefix + placeholder + suffix + content.substring(end);
             // Select the placeholder text
-            newCursorPos = start + prefix.length;
+            newCursorStart = start + prefix.length;
+            newCursorEnd = newCursorStart + placeholder.length;
         }
 
         setContent(newText);
 
         // Restore focus and selection after React re-renders
-        setTimeout(() => {
-            textarea.focus();
-            if (!selectedText) {
-                textarea.setSelectionRange(newCursorPos, newCursorPos + placeholder.length);
-            } else {
-                textarea.setSelectionRange(newCursorPos, newCursorPos);
+        // requestAnimationFrame is often more reliable than setTimeout(0) for UI updates
+        requestAnimationFrame(() => {
+            if (textarea) {
+                textarea.focus();
+                textarea.setSelectionRange(newCursorStart, newCursorEnd);
+                textarea.scrollTop = scrollTop; // Restore scroll position
             }
-        }, 0);
+        });
+    };
+
+    const insertAtCursor = (text: string) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const scrollTop = textarea.scrollTop;
+
+        const newText = content.substring(0, start) + text + content.substring(end);
+        setContent(newText);
+
+        requestAnimationFrame(() => {
+            if (textarea) {
+                textarea.focus();
+                const newPos = start + text.length;
+                textarea.setSelectionRange(newPos, newPos);
+                textarea.scrollTop = scrollTop;
+            }
+        });
     };
 
     const applyLineFormat = (prefix: string) => {
@@ -102,15 +146,21 @@ export default function EditorPage({ params }: EditorPageProps) {
         if (!textarea) return;
 
         const start = textarea.selectionStart;
+        const scrollTop = textarea.scrollTop; // Capture scroll position
         const lineStart = content.lastIndexOf('\n', start - 1) + 1;
 
         const newText = content.substring(0, lineStart) + prefix + content.substring(lineStart);
         setContent(newText);
 
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(start + prefix.length, start + prefix.length);
-        }, 0);
+        requestAnimationFrame(() => {
+            if (textarea) {
+                textarea.focus();
+                // Move cursor to where it was, shifted by prefix length
+                const newPos = start + prefix.length;
+                textarea.setSelectionRange(newPos, newPos);
+                textarea.scrollTop = scrollTop; // Restore scroll position
+            }
+        });
     };
 
     const insertLink = () => {
@@ -119,17 +169,22 @@ export default function EditorPage({ params }: EditorPageProps) {
 
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
+        const scrollTop = textarea.scrollTop; // Capture scroll position
         const selectedText = content.substring(start, end);
 
         const linkText = selectedText || 'Link-Text';
         const newText = content.substring(0, start) + `[${linkText}](url)` + content.substring(end);
         setContent(newText);
 
-        setTimeout(() => {
-            textarea.focus();
-            const urlStart = start + linkText.length + 3;
-            textarea.setSelectionRange(urlStart, urlStart + 3);
-        }, 0);
+        requestAnimationFrame(() => {
+            if (textarea) {
+                textarea.focus();
+                // Select the 'url' part so user can type it immediately
+                const urlStart = start + linkText.length + 3; // +3 for `[` + `](`
+                textarea.setSelectionRange(urlStart, urlStart + 3);
+                textarea.scrollTop = scrollTop; // Restore scroll position
+            }
+        });
     };
 
     // Frontmatter state
@@ -177,18 +232,54 @@ export default function EditorPage({ params }: EditorPageProps) {
         return () => clearTimeout(timeoutId);
     }, [content, status, importance, urgency, id, loading]);
 
+    // Style Helper Functions
+    const objToCss = (obj: any) => {
+        return Object.entries(obj)
+            .map(([k, v]) => `${k.replace(/[A-Z]/g, m => "-" + m.toLowerCase())}: ${v};`)
+            .join(' ');
+    };
+
+    const updateStyleTag = (settings: any) => {
+        let css = '';
+        if (settings.subtitle) css += `.custom-subtitle { ${objToCss(settings.subtitle)} } \n`;
+        if (settings.haiku) css += `.custom-haiku { ${objToCss(settings.haiku)} } \n`;
+        if (settings.keypoints) css += `.custom-keypoints { ${objToCss(settings.keypoints)} } \n`;
+        if (settings.reflection) css += `.custom-reflection { ${objToCss(settings.reflection)} } \n`;
+        if (settings.links) css += `.custom-links { ${objToCss(settings.links)} } \n`;
+        setCustomStyles(css);
+    };
+
+    const loadFormatSettings = async () => {
+        try {
+            const res = await fetch('/api/settings/formats');
+            const data = await res.json();
+            updateStyleTag(data);
+        } catch (e) {
+            console.error('Failed to load format settings', e);
+        }
+    };
+
     useEffect(() => {
         params.then((resolvedParams) => {
-            setId(resolvedParams.id);
+            // Join the slug array back into a path string
+            const resolvedId = Array.isArray(resolvedParams.slug)
+                ? resolvedParams.slug.join('/')
+                : resolvedParams.slug;
+
+            setId(resolvedId);
+
             // Load module content
-            fetch(`/api/modules/${resolvedParams.id}`)
+            fetch(`/api/modules/${resolvedId}`, { cache: 'no-store' })
                 .then(res => res.json())
                 .then(data => {
                     setContent(data.content || '');
                     setTitle(data.title || 'Neues Modul');
+                    setKapitel(data.kapitel !== undefined ? String(data.kapitel) : '');
+                    setUnterkapitel(data.unterkapitel ? String(data.unterkapitel) : '');
                     setStatus(data.status || 'entwurf');
                     setImportance(data.importance || 'medium');
                     setUrgency(data.urgency || 'low');
+                    setReviewNotes(data.reviewNotes || '');
                     setLoading(false);
                 })
                 .catch(() => {
@@ -203,6 +294,9 @@ export default function EditorPage({ params }: EditorPageProps) {
                 if (Array.isArray(data)) setSources(data);
             })
             .catch(console.error);
+
+        // Load settings on mount
+        loadFormatSettings();
     }, [params]);
 
     const handleSave = async (isAutoSave = false) => {
@@ -213,16 +307,27 @@ export default function EditorPage({ params }: EditorPageProps) {
 
             // If this is a new module (template), generate a new ID from the title
             if (id === 'template') {
-                const slug = title
+                let slug = title
                     .toLowerCase()
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/(^-|-$)+/g, '') || `untitled-${Date.now()}`;
+
+                // Check if module already exists to prevent overwriting
+                try {
+                    const checkResponse = await fetch(`/api/modules/${slug}`);
+                    if (checkResponse.ok) {
+                        // File exists! Append timestamp to make it unique
+                        slug = `${slug}-${Date.now()}`;
+                    }
+                } catch (err) {
+                    console.warn('Could not check for existing module, using default slug', err);
+                }
 
                 targetId = slug;
                 shouldRedirect = true;
             }
 
-            const response = await fetch(`/api/modules/${targetId}/save`, {
+            const response = await fetch(`/api/modules/${targetId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -232,6 +337,8 @@ export default function EditorPage({ params }: EditorPageProps) {
                     frontmatter: {
                         id: targetId,
                         title,
+                        kapitel: kapitel !== '' ? kapitel : undefined,
+                        unterkapitel: unterkapitel !== '' ? unterkapitel : undefined,
                         status,
                         importance,
                         urgency,
@@ -239,6 +346,7 @@ export default function EditorPage({ params }: EditorPageProps) {
                         summary: smartMetadata?.summary,
                         quotes: smartMetadata?.quotes,
                         questions: smartMetadata?.questions,
+                        reviewNotes, // Save review notes
                     },
                 }),
             });
@@ -252,10 +360,6 @@ export default function EditorPage({ params }: EditorPageProps) {
             if (shouldRedirect) {
                 setId(targetId);
                 window.history.replaceState(null, '', `/editor/${targetId}`);
-                // router.replace would trigger a reload/re-fetch which might be jarring, 
-                // but we want to ensure the URL reflects the new ID.
-                // For now, let's just update the URL silently or use router if we want a full refresh.
-                // router.replace(`/editor/${targetId}`); 
             }
 
             if (!isAutoSave) showToast('Modul erfolgreich gespeichert!', 'success');
@@ -264,6 +368,30 @@ export default function EditorPage({ params }: EditorPageProps) {
             if (!isAutoSave) showToast('Fehler beim Speichern.', 'error');
         } finally {
             if (!isAutoSave) setSaving(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm('Möchtest du dieses Kapitel wirklich unwiderruflich löschen?')) {
+            return;
+        }
+
+        setDeleting(true);
+        try {
+            const response = await fetch(`/api/modules/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete');
+            }
+
+            showToast('Modul gelöscht', 'success');
+            router.push('/'); // Redirect to home/dashboard
+        } catch (error) {
+            console.error('Error deleting module:', error);
+            showToast('Fehler beim Löschen', 'error');
+            setDeleting(false);
         }
     };
 
@@ -481,6 +609,30 @@ export default function EditorPage({ params }: EditorPageProps) {
         }
     };
 
+
+
+    const insertCustomFormat = (type: string) => {
+        let snippet = '';
+        switch (type) {
+            case 'subtitle':
+                snippet = '\n<p class="custom-subtitle">Mein Untertitel</p>\n';
+                break;
+            case 'haiku':
+                snippet = '\n<div class="custom-haiku">\nErste Zeile hier,\nZweite Zeile folgt sogleich,\nEnde des Gedichts.\n</div>\n';
+                break;
+            case 'keypoints':
+                snippet = '\n<div class="custom-keypoints">\n<strong>Kernaussagen:</strong>\n<ul>\n<li>Punkt 1</li>\n<li>Punkt 2</li>\n</ul>\n</div>\n';
+                break;
+            case 'reflection':
+                snippet = '\n<div class="custom-reflection">\n<strong>Reflexionsfrage:</strong><br>\nWas bedeutet das für mich?\n</div>\n';
+                break;
+            case 'links':
+                snippet = '\n<div class="custom-links">\n<strong>Siehe auch:</strong> <a href="#">Anderes Kapitel</a>\n</div>\n';
+                break;
+        }
+        insertAtCursor(snippet);
+    };
+
     const handleDeleteSource = async (sourceId: string) => {
         try {
             await fetch('/api/research/sources', {
@@ -496,10 +648,78 @@ export default function EditorPage({ params }: EditorPageProps) {
         }
     };
 
+    // Helper to ensure lists render correctly even without blank lines (Word-like behavior)
+    const preprocessMarkdown = (text: string) => {
+        if (!text) return '';
+        // Replace single newlines before list items with double newlines
+        // Matches: non-newline char, newline, optional whitespace, bullet/number, space
+        return text.replace(/([^\n])\n(\s*[-*+] |\s*\d+\. )/g, '$1\n\n$2');
+    };
+
     const handleInsertQuoteFromSource = (quote: string, sourceTitle: string) => {
         setContent(prev => prev + `\n\n> "${quote}"\n> — *${sourceTitle}*`);
         showToast('Zitat eingefügt', 'success');
     };
+
+    const handleTextSelection = () => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed) {
+            setSelectionTooltip(null);
+            return;
+        }
+
+        const text = selection.toString().trim();
+        if (!text) return;
+
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+
+        setSelectionTooltip({
+            x: rect.left + rect.width / 2,
+            y: rect.top - 10,
+            text: text
+        });
+    };
+
+    const highlightSelection = () => {
+        if (!selectionTooltip) return;
+
+        // Simple string replacement - can be improved for multiple occurrences
+        // Currently highlights the first occurrence or needs more robust logic for unique identification
+        // For a prototype, we'll try to find the selected text in the content
+
+        // Escape regex special characters in the selected text
+        const safeText = selectionTooltip.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        // Create regex to match the text NOT already inside a mark tag
+        // This is tricky with simple regex on markdown.
+        // Simplified approach: replace the first occurrence of the text that isn't already marked
+
+        const newContent = content.replace(selectionTooltip.text, `<mark>${selectionTooltip.text}</mark>`);
+
+        if (newContent !== content) {
+            setContent(newContent);
+            showToast('Text markiert', 'success');
+        } else {
+            showToast('Konnte Textstelle nicht eindeutig finden', 'info');
+        }
+
+        setSelectionTooltip(null);
+        window.getSelection()?.removeAllRanges();
+    };
+
+    // Close tooltip when clicking elsewhere
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            // If click is not on the tooltip button
+            const target = e.target as HTMLElement;
+            if (!target.closest('#selection-tooltip')) {
+                setSelectionTooltip(null);
+            }
+        };
+        window.addEventListener('mousedown', handleClick);
+        return () => window.removeEventListener('mousedown', handleClick);
+    }, []);
 
     if (loading) {
         return (
@@ -544,6 +764,21 @@ export default function EditorPage({ params }: EditorPageProps) {
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
+                            <div className="bg-gray-100 p-1 rounded-full flex items-center mr-2">
+                                <button
+                                    onClick={() => setViewMode('edit')}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${viewMode === 'edit' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    <Edit3 size={14} /> Edit
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('read')}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${viewMode === 'read' ? 'bg-white shadow-sm text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    <BookOpen size={14} /> Lesen
+                                </button>
+                            </div>
+
                             <button
                                 onClick={() => setFocusMode(!focusMode)}
                                 className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-full transition-all"
@@ -567,6 +802,14 @@ export default function EditorPage({ params }: EditorPageProps) {
                             >
                                 <Save size={16} />
                                 {saving ? 'Speichert...' : 'Speichern'}
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                disabled={deleting || id === 'template'}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-all shadow-sm font-medium text-sm border border-red-100 placeholder:opacity-50"
+                                title="Kapitel löschen"
+                            >
+                                {deleting ? '...' : '🗑️'}
                             </button>
                         </div>
                     </div>
@@ -593,103 +836,206 @@ export default function EditorPage({ params }: EditorPageProps) {
                             bg-white rounded-2xl shadow-sm border border-gray-100 min-h-[calc(100vh-12rem)] transition-all duration-500
                             ${focusMode ? 'shadow-none border-none' : ''}
                         `}>
-                            {/* Markdown Toolbar */}
-                            <div className={`
-                                flex items-center gap-1 p-3 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl flex-wrap
-                                ${focusMode ? 'opacity-0 hover:opacity-100 transition-opacity duration-300' : ''}
-                            `}>
-                                {/* Headings */}
-                                <div className="flex items-center gap-0.5 mr-2 border-r border-gray-200 pr-2">
-                                    <button
-                                        onClick={() => applyLineFormat('# ')}
-                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
-                                        title="Überschrift 1 (H1)"
-                                    >
-                                        <Heading1 size={18} />
-                                    </button>
-                                    <button
-                                        onClick={() => applyLineFormat('## ')}
-                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
-                                        title="Überschrift 2 (H2)"
-                                    >
-                                        <Heading2 size={18} />
-                                    </button>
-                                    <button
-                                        onClick={() => applyLineFormat('### ')}
-                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
-                                        title="Überschrift 3 (H3)"
-                                    >
-                                        <Heading3 size={18} />
-                                    </button>
-                                </div>
+                            {viewMode === 'edit' ? (
+                                <>
+                                    {/* Markdown Toolbar */}
+                                    <div className={`
+                                        flex items-center gap-1 p-3 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl flex-wrap
+                                        ${focusMode ? 'opacity-0 hover:opacity-100 transition-opacity duration-300' : ''}
+                                    `}>
+                                        {/* Headings */}
+                                        <div className="flex items-center gap-0.5 mr-2 border-r border-gray-200 pr-2">
+                                            <button
+                                                onClick={() => applyLineFormat('# ')}
+                                                className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors"
+                                                title="Überschrift 1 (H1)"
+                                            >
+                                                <Heading1 size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => applyLineFormat('## ')}
+                                                className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors"
+                                                title="Überschrift 2 (H2)"
+                                            >
+                                                <Heading2 size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => applyLineFormat('### ')}
+                                                className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors"
+                                                title="Überschrift 3 (H3)"
+                                            >
+                                                <Heading3 size={18} />
+                                            </button>
+                                        </div>
 
-                                {/* Text Formatting */}
-                                <div className="flex items-center gap-0.5 mr-2 border-r border-gray-200 pr-2">
-                                    <button
-                                        onClick={() => applyMarkdownFormat('**', '**', 'fett')}
-                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
-                                        title="Fett (Cmd+B)"
-                                    >
-                                        <Bold size={18} />
-                                    </button>
-                                    <button
-                                        onClick={() => applyMarkdownFormat('*', '*', 'kursiv')}
-                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
-                                        title="Kursiv (Cmd+I)"
-                                    >
-                                        <Italic size={18} />
-                                    </button>
-                                </div>
+                                        {/* Text Formatting */}
+                                        <div className="flex items-center gap-0.5 mr-2 border-r border-gray-200 pr-2">
+                                            <button
+                                                onClick={() => applyMarkdownFormat('**', '**', 'fett')}
+                                                className="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-900 rounded-lg transition-colors"
+                                                title="Fett (Cmd+B)"
+                                            >
+                                                <Bold size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => applyMarkdownFormat('*', '*', 'kursiv')}
+                                                className="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-900 rounded-lg transition-colors"
+                                                title="Kursiv (Cmd+I)"
+                                            >
+                                                <Italic size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => applyMarkdownFormat('<center>', '</center>', 'Zentrierter Text')}
+                                                className="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-900 rounded-lg transition-colors"
+                                                title="Zentrieren"
+                                            >
+                                                <AlignCenter size={18} />
+                                            </button>
 
-                                {/* Block Formatting */}
-                                <div className="flex items-center gap-0.5 mr-2 border-r border-gray-200 pr-2">
-                                    <button
-                                        onClick={() => applyLineFormat('> ')}
-                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
-                                        title="Zitat"
-                                    >
-                                        <QuoteIcon size={18} />
-                                    </button>
-                                    <button
-                                        onClick={() => applyLineFormat('- ')}
-                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
-                                        title="Aufzählung"
-                                    >
-                                        <List size={18} />
-                                    </button>
-                                    <button
-                                        onClick={() => applyLineFormat('1. ')}
-                                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
-                                        title="Nummerierte Liste"
-                                    >
-                                        <ListOrdered size={18} />
-                                    </button>
-                                </div>
+                                            {/* Color Picker Dropdown */}
+                                            <div className="relative group">
+                                                <button
+                                                    className="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-900 rounded-lg transition-colors"
+                                                    title="Schriftfarbe"
+                                                >
+                                                    <Palette size={18} />
+                                                </button>
+                                                <div className="absolute top-full left-0 mt-1 bg-white shadow-lg rounded-xl border border-gray-100 p-2 hidden group-hover:block z-50 min-w-[120px]">
+                                                    <div className="flex flex-col gap-1">
+                                                        <button onClick={() => applyMarkdownFormat('<span style="color:black">', '</span>', 'Text')} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded text-sm w-full text-left">
+                                                            <div className="w-3 h-3 rounded-full bg-black border border-gray-200"></div> Schwarz
+                                                        </button>
+                                                        <button onClick={() => applyMarkdownFormat('<span style="color:blue">', '</span>', 'Text')} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded text-sm w-full text-left">
+                                                            <div className="w-3 h-3 rounded-full bg-blue-500"></div> Blau
+                                                        </button>
+                                                        <button onClick={() => applyMarkdownFormat('<span style="color:red">', '</span>', 'Text')} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded text-sm w-full text-left">
+                                                            <div className="w-3 h-3 rounded-full bg-red-500"></div> Rot
+                                                        </button>
+                                                        <button onClick={() => applyMarkdownFormat('<span style="color:green">', '</span>', 'Text')} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded text-sm w-full text-left">
+                                                            <div className="w-3 h-3 rounded-full bg-green-500"></div> Grün
+                                                        </button>
+                                                        <button onClick={() => applyMarkdownFormat('<span style="color:purple">', '</span>', 'Text')} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded text-sm w-full text-left">
+                                                            <div className="w-3 h-3 rounded-full bg-purple-500"></div> Violett
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                {/* Link */}
-                                <button
-                                    onClick={insertLink}
-                                    className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
-                                    title="Link einfügen"
+                                        {/* Block Formatting */}
+                                        <div className="flex items-center gap-0.5 mr-2 border-r border-gray-200 pr-2">
+                                            <button
+                                                onClick={() => applyLineFormat('> ')}
+                                                className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                                title="Zitat"
+                                            >
+                                                <QuoteIcon size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => applyLineFormat('- ')}
+                                                className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                                title="Aufzählung"
+                                            >
+                                                <List size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => applyLineFormat('1. ')}
+                                                className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                                title="Nummerierte Liste"
+                                            >
+                                                <ListOrdered size={18} />
+                                            </button>
+                                        </div>
+
+                                        {/* Link */}
+                                        <button
+                                            onClick={insertLink}
+                                            className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                            title="Link einfügen"
+                                        >
+                                            <Link2 size={18} />
+                                        </button>
+
+                                        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+                                        {/* Custom Formats */}
+                                        <div className="flex items-center gap-1.5">
+                                            <button onClick={() => insertCustomFormat('subtitle')} className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition-colors">Untertitel</button>
+                                            <button onClick={() => insertCustomFormat('haiku')} className="px-3 py-1.5 text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-md font-medium transition-colors">Haiku</button>
+                                            <button onClick={() => insertCustomFormat('keypoints')} className="px-3 py-1.5 text-xs bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-md font-medium transition-colors">Kern</button>
+                                            <button onClick={() => insertCustomFormat('reflection')} className="px-3 py-1.5 text-xs bg-fuchsia-50 hover:bg-fuchsia-100 text-fuchsia-700 rounded-md font-medium transition-colors">Reflexion</button>
+                                            <button onClick={() => insertCustomFormat('links')} className="px-3 py-1.5 text-xs bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-md font-medium transition-colors">Links</button>
+
+                                            <button
+                                                onClick={() => setShowFormatSettings(true)}
+                                                className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-primary ml-2 transition-colors"
+                                                title="Formate bearbeiten"
+                                            >
+                                                <Settings size={14} />
+                                            </button>
+                                        </div>
+
+                                        {/* Hint */}
+                                        <span className="ml-auto text-xs text-gray-400 hidden sm:block">
+                                            Markdown-Formatierung
+                                        </span>
+                                    </div>
+
+                                    {/* Textarea */}
+                                    <textarea
+                                        ref={textareaRef}
+                                        value={content}
+                                        onChange={(e) => setContent(e.target.value)}
+                                        className="w-full h-full min-h-[600px] font-serif text-lg leading-relaxed text-gray-700 border-none focus:outline-none focus:ring-0 resize-none placeholder-gray-300 p-8"
+                                        placeholder="Hier beginnt deine Geschichte..."
+                                        spellCheck={false}
+                                    />
+                                    {/* Inject Custom Styles */}
+                                    <style>{customStyles}</style>
+                                </>
+                            ) : (
+                                <div
+                                    className="p-8 md:p-12 min-h-[600px] prose prose-lg max-w-none text-gray-800 font-serif leading-loose"
+                                    onMouseUp={handleTextSelection}
+                                    onKeyUp={handleTextSelection}
                                 >
-                                    <Link2 size={18} />
-                                </button>
+                                    <style jsx global>{`
+                                        mark {
+                                            background-color: #fef08a; /* Yellow-200 */
+                                            padding: 2px 0;
+                                            border-radius: 2px;
+                                            color: inherit;
+                                        }
+                                    `}</style>
+                                    <style>{customStyles}</style>
+                                    <ReactMarkdown
+                                        rehypePlugins={[rehypeRaw]}
+                                        remarkPlugins={[remarkGfm, remarkBreaks]}
+                                    >
+                                        {preprocessMarkdown(content)}
+                                    </ReactMarkdown>
 
-                                {/* Hint */}
-                                <span className="ml-auto text-xs text-gray-400 hidden sm:block">
-                                    Markdown-Formatierung
-                                </span>
-                            </div>
-
-                            {/* Textarea */}
-                            <textarea
-                                ref={textareaRef}
-                                value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                className="w-full h-full min-h-[600px] font-serif text-lg leading-relaxed text-gray-700 border-none focus:outline-none focus:ring-0 resize-none placeholder-gray-300 p-8"
-                                placeholder="Hier beginnt deine Geschichte..."
-                                spellCheck={false}
-                            />
+                                    {/* Floating Tooltip */}
+                                    {selectionTooltip && (
+                                        <div
+                                            id="selection-tooltip"
+                                            className="fixed z-50 bg-gray-900 text-white rounded-lg shadow-lg py-1 px-2 flex items-center gap-2 transform -translate-x-1/2 -translate-y-full mb-2 animate-in fade-in zoom-in duration-200"
+                                            style={{ left: selectionTooltip.x, top: selectionTooltip.y }}
+                                        >
+                                            <button
+                                                onClick={highlightSelection}
+                                                className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-xs font-semibold"
+                                            >
+                                                <Highlighter size={12} /> Markieren
+                                            </button>
+                                            <div className="w-px h-3 bg-gray-700"></div>
+                                            <button onClick={() => setSelectionTooltip(null)} className="p-1 hover:text-gray-300">
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                         <div className={`mt-4 flex justify-end text-xs text-gray-400 font-medium px-4 transition-opacity duration-300 ${focusMode ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
                             {content.trim().split(/\s+/).filter(w => w.length > 0).length} Wörter
@@ -707,11 +1053,65 @@ export default function EditorPage({ params }: EditorPageProps) {
                             </div>
                         )}
 
+                        {viewMode === 'read' && (
+                            <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 mb-6 bg-yellow-50/50 border-yellow-100">
+                                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <CheckSquare size={16} className="text-yellow-600" /> Lektorat & Status
+                                </h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-500 mb-1.5">
+                                            Notizen zur Überarbeitung
+                                        </label>
+                                        <textarea
+                                            value={reviewNotes}
+                                            onChange={(e) => setReviewNotes(e.target.value)}
+                                            placeholder="Was muss noch getan werden?"
+                                            className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500 outline-none transition-all placeholder:text-gray-300"
+                                            rows={4}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setStatus('final');
+                                            handleSave(false);
+                                        }}
+                                        className="w-full py-2 bg-success/10 text-success hover:bg-success/20 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <CheckCircle size={16} /> Mark as Done
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
                             <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
                                 Einstellungen
                             </h3>
                             <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1.5">Kapitel Nr.</label>
+                                        <input
+                                            type="text"
+                                            value={kapitel}
+                                            onChange={(e) => setKapitel(e.target.value)}
+                                            className="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-primary/20"
+                                            placeholder="1"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1.5">Unterkapitel</label>
+                                        <input
+                                            type="text"
+                                            value={unterkapitel}
+                                            onChange={(e) => setUnterkapitel(e.target.value)}
+                                            className="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-primary/20"
+                                            placeholder="1.1.1"
+                                        />
+                                    </div>
+                                </div>
+
                                 <div>
                                     <label className="block text-xs font-medium text-gray-500 mb-1.5">Status</label>
                                     <div className="relative">
@@ -1101,6 +1501,11 @@ export default function EditorPage({ params }: EditorPageProps) {
                     </div>
                 </div>
             </div>
+            <FormatSettingsDialog
+                isOpen={showFormatSettings}
+                onClose={() => setShowFormatSettings(false)}
+                onSave={(newSettings) => updateStyleTag(newSettings)}
+            />
         </div>
     );
 }

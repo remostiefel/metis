@@ -56,10 +56,17 @@ export function getAllModules(): Module[] {
 
     // Sort modules by chapter and subchapter
     return modules.sort((a, b) => {
-        if (a.kapitel !== b.kapitel) {
-            return a.kapitel - b.kapitel;
+        const valA = String(a.kapitel || '');
+        const valB = String(b.kapitel || '');
+
+        if (valA !== valB) {
+            return valA.localeCompare(valB, undefined, { numeric: true });
         }
-        return a.unterkapitel - b.unterkapitel;
+
+        const subA = String(a.unterkapitel || '');
+        const subB = String(b.unterkapitel || '');
+
+        return subA.localeCompare(subB, undefined, { numeric: true });
     });
 }
 

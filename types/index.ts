@@ -4,8 +4,8 @@ export type Priority = 'low' | 'medium' | 'high';
 export interface ModuleFrontmatter {
   id: string;
   title: string;
-  kapitel: number;
-  unterkapitel: number;
+  kapitel: number | string;
+  unterkapitel: number | string;
   tags: string[];
   status: ModuleStatus;
   priority: Priority;

@@ -1,4 +1,5 @@
 import { getAllModules } from '@/lib/markdown';
+export const dynamic = 'force-dynamic';
 import { ModuleList } from '@/components/ModuleList';
 import Link from 'next/link';
 
