@@ -25,3 +25,61 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Custom Prism Syntax Highlighting for Editor */
+/* Make syntax characters subtle */
+.token.punctuation,
+.token.operator {
+  color: #a3a3a3 !important;
+  /* Light gray for markers like #, *, - */
+}
+
+/* Headings */
+.token.title.important {
+  color: #4f46e5 !important;
+  /* Indigo for # */
+  font-weight: bold;
+}
+
+.token.title {
+  font-weight: bold;
+  color: #1f2937 !important;
+  /* Content black */
+}
+
+/* Bold/Italic */
+.token.bold {
+  font-weight: bold;
+  color: #1f2937 !important;
+}
+
+.token.italic {
+  font-style: italic;
+  color: #1f2937 !important;
+}
+
+/* Lists */
+.token.list.punctuation {
+  color: #f59e0b !important;
+  /* Amber for bullets */
+}
+
+/* Blockquotes */
+.token.blockquote.punctuation {
+  color: #9ca3af !important;
+}
+
+/* Links */
+.token.url {
+  color: #3b82f6 !important;
+  text-decoration: underline;
+}
+
+/* Code blocks */
+.token.code {
+  font-family: monospace;
+  background-color: #f3f4f6;
+  padding: 0.1rem 0.2rem;
+  border-radius: 0.25rem;
+  color: #ef4444 !important;
+}

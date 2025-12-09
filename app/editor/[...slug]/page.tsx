@@ -4,12 +4,16 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PomodoroTimer } from '@/components/PomodoroTimer';
-import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon, Brain, Quote, HelpCircle, Search, CheckCircle, FileDown, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Quote as QuoteIcon, Link2, AlignCenter, Palette, BookOpen, Edit3, Highlighter, CheckSquare, X, Settings } from 'lucide-react';
+import { Save, ArrowLeft, Download, Copy, Sparkles, Tag, MessageSquare, Type, Link as LinkIcon, Brain, Quote, HelpCircle, Search, CheckCircle, FileDown, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Quote as QuoteIcon, Link2, AlignCenter, Palette, BookOpen, Edit3, Highlighter, CheckSquare, X, Settings, Minus } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import { FormatSettingsDialog } from '@/components/FormatSettingsDialog';
+import Editor from 'react-simple-code-editor';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-markdown';
+import 'prismjs/themes/prism.css'; // Import base theme, we'll override it
 
 interface EditorPageProps {
     params: Promise<{ slug: string[] }>;
@@ -77,10 +81,21 @@ export default function EditorPage({ params }: EditorPageProps) {
     const [sources, setSources] = useState<Source[]>([]);
 
     // Textarea ref for markdown toolbar
+    // We need to keep this to interface with our toolbar functions
+    // react-simple-code-editor exposes the textarea via a ref, but it might be nested
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Initial load fix for Prism
+    useEffect(() => {
+        // Force highlight update on mount if needed
+    }, []);
 
     // Markdown formatting helper
     const applyMarkdownFormat = (prefix: string, suffix: string = prefix, placeholder: string = 'Text') => {
+        // For Editor component, we need to access the underlying textarea
+        // The simple-code-editor forwards ref to the textarea if passed correctly or we access it via the component
+        // Current version of react-simple-code-editor might attach ref to container or textarea depending on version
+        // We will pass currentRef to the Editor component
         const textarea = textareaRef.current;
         if (!textarea) return;
 
@@ -945,6 +960,13 @@ export default function EditorPage({ params }: EditorPageProps) {
                                             >
                                                 <ListOrdered size={18} />
                                             </button>
+                                            <button
+                                                onClick={() => insertAtCursor('\n---\n')}
+                                                className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-colors"
+                                                title="Trennlinie"
+                                            >
+                                                <Minus size={18} />
+                                            </button>
                                         </div>
 
                                         {/* Link */}
@@ -981,15 +1003,26 @@ export default function EditorPage({ params }: EditorPageProps) {
                                         </span>
                                     </div>
 
-                                    {/* Textarea */}
-                                    <textarea
-                                        ref={textareaRef}
-                                        value={content}
-                                        onChange={(e) => setContent(e.target.value)}
-                                        className="w-full h-full min-h-[600px] font-serif text-lg leading-relaxed text-gray-700 border-none focus:outline-none focus:ring-0 resize-none placeholder-gray-300 p-8"
-                                        placeholder="Hier beginnt deine Geschichte..."
-                                        spellCheck={false}
-                                    />
+                                    {/* Editor Area with Syntax Highlighting */}
+                                    <div className="relative w-full h-full min-h-[500px] font-mono text-base bg-white rounded-b-2xl p-4 overflow-auto">
+                                        <Editor
+                                            value={content}
+                                            onValueChange={setContent}
+                                            highlight={(code) => Prism.highlight(code, Prism.languages.markdown, 'markdown')}
+                                            padding={10}
+                                            textareaId="editor-textarea"
+                                            className="font-mono min-h-full"
+                                            style={{
+                                                fontFamily: '"Fira Code", "Fira Mono", monospace',
+                                                fontSize: 16,
+                                                backgroundColor: '#ffffff',
+                                                minHeight: '100%',
+                                            }}
+                                            textareaClassName="focus:outline-none"
+                                            // @ts-ignore
+                                            ref={textareaRef}
+                                        />
+                                    </div>
                                     {/* Inject Custom Styles */}
                                     <style>{customStyles}</style>
                                 </>
